@@ -18,6 +18,8 @@ class Pipeline:
         """Execute fetch -> normalize -> write for each dataset and each day in range."""
         current_date = to_utc(start_date).replace(hour=0, minute=0, second=0, microsecond=0)
         target_end = to_utc(end_date)
+        processed_count = 0
+        skipped_count = 0
 
         while current_date < target_end:
             day_end = current_date + timedelta(days=1)
@@ -28,6 +30,7 @@ class Pipeline:
                 
                 if not self.force and self.io_handler.exists(dataset.name, date_path, filename):
                     logger.info(f"Skipped: {dataset.name} for {current_date.date()} (already exists)")
+                    skipped_count += 1
                     continue
 
                 try:
@@ -40,7 +43,10 @@ class Pipeline:
                     normalized_data = dataset.normalize(raw_data)
                     self.io_handler.write(normalized_data, dataset.name, date_path, filename)
                     logger.info(f"Successfully processed {dataset.name} for {current_date.date()}")
+                    processed_count += 1
                 except Exception:
                     logger.exception(f"Failed to process {dataset.name} for {current_date.date()}")
 
             current_date = day_end
+
+        logger.info(f"Pipeline finished successfully (processed={processed_count}, skipped={skipped_count})")
