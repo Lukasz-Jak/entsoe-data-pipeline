@@ -1,0 +1,57 @@
+2026-01-11 14:34:59,891 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 14:34:59,892 - __main__ - INFO - Download completed successfully
+2026-01-11 14:41:12,350 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 14:41:12,350 - __main__ - INFO - Download completed successfully
+2026-01-11 14:41:43,491 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 14:41:43,492 - __main__ - INFO - Download completed successfully
+2026-01-11 14:47:17,097 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 14:47:17,098 - __main__ - INFO - Download completed successfully
+2026-01-11 14:57:29,096 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 14:57:29,098 - src.pipeline - INFO - Processing day_ahead_prices for 2024-01-01...
+2026-01-11 14:57:30,524 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/01/01\day_ahead_prices_20240101.csv
+2026-01-11 14:57:31,451 - src.pipeline - ERROR - Failed to process day_ahead_prices for 2024-01-01
+Traceback (most recent call last):
+  File "C:\Users\jakub\Documents\3_PROJECTS\PY\entsoe-data-pipeline\src\pipeline.py", line 41, in run
+    self.io_handler.write(normalized_data, dataset.name, date_path, filename)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jakub\Documents\3_PROJECTS\PY\entsoe-data-pipeline\src\io_handler.py", line 31, in write
+    df.to_excel(full_path, index=True)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jakub\Documents\3_PROJECTS\PY\entsoe-data-pipeline\.venv\Lib\site-packages\pandas\util\_decorators.py", line 333, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\jakub\Documents\3_PROJECTS\PY\entsoe-data-pipeline\.venv\Lib\site-packages\pandas\core\generic.py", line 2439, in to_excel
+    formatter.write(
+    ~~~~~~~~~~~~~~~^
+        excel_writer,
+        ^^^^^^^^^^^^^
+    ...<6 lines>...
+        engine_kwargs=engine_kwargs,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\jakub\Documents\3_PROJECTS\PY\entsoe-data-pipeline\.venv\Lib\site-packages\pandas\io\formats\excel.py", line 952, in write
+    writer._write_cells(
+    ~~~~~~~~~~~~~~~~~~~^
+        formatted_cells,
+        ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        freeze_panes=freeze_panes,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\jakub\Documents\3_PROJECTS\PY\entsoe-data-pipeline\.venv\Lib\site-packages\pandas\io\excel\_openpyxl.py", line 486, in _write_cells
+    for cell in cells:
+                ^^^^^
+  File "C:\Users\jakub\Documents\3_PROJECTS\PY\entsoe-data-pipeline\.venv\Lib\site-packages\pandas\io\formats\excel.py", line 890, in get_formatted_cells
+    cell.val = self._format_value(cell.val)
+               ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\jakub\Documents\3_PROJECTS\PY\entsoe-data-pipeline\.venv\Lib\site-packages\pandas\io\formats\excel.py", line 607, in _format_value
+    raise ValueError(
+    ...<3 lines>...
+    )
+ValueError: Excel does not support datetimes with timezones. Please ensure that datetimes are timezone unaware before writing to Excel.
+2026-01-11 14:57:31,515 - __main__ - INFO - Download completed successfully
+2026-01-11 15:11:06,601 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 15:11:06,603 - __main__ - INFO - Download completed successfully
+2026-01-11 15:11:44,871 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 15:11:44,873 - __main__ - INFO - Download completed successfully

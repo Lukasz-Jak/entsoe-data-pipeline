@@ -1,6 +1,6 @@
-# ENTSO-E Downloader
+# entsoe-data-pipeline
 
-This project is a local, file-based data ingestion tool for downloading selected
+This project is entsoe-data-pipeline: a local, file-based data ingestion tool for downloading selected
 time-series datasets from the ENTSO-E API and persisting them as CSV/XLSX files.
 
 The project is intentionally minimal and deterministic. It focuses on correctness,

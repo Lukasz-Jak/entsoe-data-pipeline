@@ -1,8 +1,8 @@
-# AGENTS.md — OPERATIONAL CONTRACT (PyCharm AI Assistant / AI Agent)
+# AGENTS.md — OPERATIONAL CONTRACT (entsoe-data-pipeline)
 
 ## PROJECT INTENT
 
-This project is a minimal, deterministic data ingestion pipeline for downloading
+This project is entsoe-data-pipeline: a minimal, deterministic data ingestion pipeline for downloading
 time-series data from the ENTSO-E API and persisting it to local files (CSV/XLSX).
 It is intentionally limited in scope and designed to be correct, reproducible,
 and extensible without introducing additional infrastructure.

@@ -18,10 +18,14 @@ class DayAheadPricesDataset(BaseDataset):
         )
 
     def normalize(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Centralized time normalization to UTC is handled by entsoe-py usually, 
-        but we ensure it here if needed."""
+        """Centralized time normalization to UTC.
+        Removes timezone info for Excel compatibility while keeping UTC semantics."""
         if isinstance(df, pd.Series):
             df = df.to_frame(name="price")
         
+        # Ensure UTC and make naive for Excel support
+        if df.index.tz is not None:
+            df.index = df.index.tz_convert("UTC").tz_localize(None)
+            
         df.index.name = "timestamp_utc"
         return df

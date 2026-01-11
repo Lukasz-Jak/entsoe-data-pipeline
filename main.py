@@ -9,7 +9,7 @@ from src.pipeline import Pipeline
 from src.datasets.day_ahead_prices import DayAheadPricesDataset
 
 def main():
-    parser = argparse.ArgumentParser(description="ENTSO-E Data Downloader MVP")
+    parser = argparse.ArgumentParser(description="entsoe-data-pipeline MVP")
     parser.add_argument("--start", type=str, required=True, help="Start date (YYYY-MM-DD)")
     parser.add_argument("--end", type=str, required=True, help="End date (YYYY-MM-DD)")
     parser.add_argument("--force", action="store_true", help="Overwrite existing files")
@@ -19,7 +19,7 @@ def main():
     setup_logging(config.get("logging", {}).get("level", "INFO"))
     
     logger = logging.getLogger(__name__)
-    logger.info("Starting ENTSO-E Downloader")
+    logger.info("Starting entsoe-data-pipeline")
 
     try:
         client = EntsoeClient(
