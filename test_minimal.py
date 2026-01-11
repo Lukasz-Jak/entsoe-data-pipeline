@@ -14,7 +14,7 @@ class TestMVP(unittest.TestCase):
     def test_io_handler_exists(self):
         with patch('os.path.exists', return_value=True):
             handler = IOHandler(base_path="test", formats=["csv"])
-            self.assertTrue(handler.exists("ds", "2023/01/01", "file"))
+            self.assertTrue(handler.exists("ds", "2023/2023-01", "file"))
 
 if __name__ == "__main__":
     print("Mocks and tests structure ready. In a real environment, run 'pytest'.")

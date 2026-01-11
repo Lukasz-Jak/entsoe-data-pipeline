@@ -8,5 +8,5 @@ def to_utc(dt: datetime) -> datetime:
     return dt.astimezone(timezone.utc)
 
 def format_date_path(dt: datetime) -> str:
-    """Format date for directory partitioning."""
-    return dt.strftime("%Y/%m/%d")
+    """Format date for directory partitioning: YYYY/YYYY-MM."""
+    return f"{dt.strftime('%Y')}/{dt.strftime('%Y-%m')}"
