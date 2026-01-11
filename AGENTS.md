@@ -183,3 +183,7 @@ AI agents must NOT:
 - introduce new storage formats,
 - bypass idempotency safeguards,
 - refactor architecture without explicit instruction.
+
+## AGENTS.MD MODIFICATION
+AI agents must not modify AGENTS.md unless explicitly instructed by the user.
+If a task conflicts with AGENTS.md, the agent must stop and ask for guidance.
