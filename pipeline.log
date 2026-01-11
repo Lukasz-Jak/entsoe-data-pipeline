@@ -55,3 +55,56 @@ ValueError: Excel does not support datetimes with timezones. Please ensure that 
 2026-01-11 15:11:06,603 - __main__ - INFO - Download completed successfully
 2026-01-11 15:11:44,871 - __main__ - INFO - Starting entsoe-data-pipeline
 2026-01-11 15:11:44,873 - __main__ - INFO - Download completed successfully
+2026-01-11 15:27:40,724 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 15:27:40,725 - __main__ - INFO - Download completed successfully
+2026-01-11 15:27:49,408 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 15:27:49,409 - src.pipeline - INFO - Processing day_ahead_prices for 2024-01-02...
+2026-01-11 15:27:50,976 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240102.csv
+2026-01-11 15:27:51,162 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240102.xlsx
+2026-01-11 15:27:51,162 - src.pipeline - INFO - Successfully processed day_ahead_prices for 2024-01-02
+2026-01-11 15:27:51,162 - __main__ - INFO - Download completed successfully
+2026-01-11 15:30:55,095 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 15:30:55,096 - src.pipeline - INFO - Skipped: day_ahead_prices for 2024-01-02 (already exists)
+2026-01-11 15:30:55,096 - __main__ - INFO - Download completed successfully
+2026-01-11 15:31:48,169 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 15:31:48,170 - src.pipeline - INFO - Processing day_ahead_prices for 2024-01-03...
+2026-01-11 15:31:49,610 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240103.csv
+2026-01-11 15:31:49,742 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240103.xlsx
+2026-01-11 15:31:49,742 - src.pipeline - INFO - Successfully processed day_ahead_prices for 2024-01-03
+2026-01-11 15:31:49,742 - __main__ - INFO - Download completed successfully
+2026-01-11 15:51:57,898 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 15:51:57,899 - src.pipeline - INFO - Processing day_ahead_prices for 2024-01-01...
+2026-01-11 15:51:58,523 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240101.csv
+2026-01-11 15:51:58,658 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240101.xlsx
+2026-01-11 15:51:58,658 - src.pipeline - INFO - Successfully processed day_ahead_prices for 2024-01-01
+2026-01-11 15:51:58,659 - __main__ - INFO - Download completed successfully
+2026-01-11 16:00:27,031 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 16:00:27,032 - src.pipeline - INFO - Processing day_ahead_prices for 2024-01-04...
+2026-01-11 16:00:40,912 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240104.csv
+2026-01-11 16:00:41,045 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240104.xlsx
+2026-01-11 16:00:41,045 - src.pipeline - INFO - Successfully processed day_ahead_prices for 2024-01-04
+2026-01-11 16:00:41,045 - src.pipeline - INFO - Processing day_ahead_prices for 2024-01-05...
+2026-01-11 16:00:47,005 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240105.csv
+2026-01-11 16:00:47,017 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240105.xlsx
+2026-01-11 16:00:47,017 - src.pipeline - INFO - Successfully processed day_ahead_prices for 2024-01-05
+2026-01-11 16:00:47,017 - src.pipeline - INFO - Processing day_ahead_prices for 2024-01-06...
+2026-01-11 16:00:49,304 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240106.csv
+2026-01-11 16:00:49,316 - src.io_handler - INFO - Saved: outputs\day_ahead_prices\2024/2024-01\day_ahead_prices_20240106.xlsx
+2026-01-11 16:00:49,316 - src.pipeline - INFO - Successfully processed day_ahead_prices for 2024-01-06
+2026-01-11 16:00:49,317 - __main__ - INFO - Download completed successfully
+2026-01-11 16:15:59,545 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 16:15:59,546 - __main__ - INFO - Download completed successfully
+2026-01-11 16:16:00,780 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 16:16:00,781 - __main__ - INFO - Download completed successfully
+2026-01-11 16:16:02,020 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 16:16:02,021 - src.pipeline - INFO - Skipped: day_ahead_prices for 2024-01-01 (already exists)
+2026-01-11 16:16:02,021 - __main__ - INFO - Download completed successfully
+2026-01-11 16:17:21,868 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 16:17:21,868 - __main__ - ERROR - Nieprawid³owy zakres dat: data koñcowa musi byæ póŸniejsza ni¿ data pocz¹tkowa (zakres pó³otwarty [start, end)).
+2026-01-11 16:17:23,176 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 16:17:23,177 - __main__ - ERROR - Nieprawid³owy zakres dat: data koñcowa musi byæ póŸniejsza ni¿ data pocz¹tkowa (zakres pó³otwarty [start, end)).
+2026-01-11 16:17:24,560 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 16:17:24,561 - src.pipeline - INFO - Skipped: day_ahead_prices for 2024-01-01 (already exists)
+2026-01-11 16:17:24,561 - __main__ - INFO - Download completed successfully
+2026-01-11 16:28:07,206 - __main__ - INFO - Starting entsoe-data-pipeline
+2026-01-11 16:28:07,206 - __main__ - ERROR - Invalid date range: end date must be later than start date (half-open range [start, end)).

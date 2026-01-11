@@ -21,6 +21,14 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info("Starting entsoe-data-pipeline")
 
+    start_dt = datetime.strptime(args.start, "%Y-%m-%d")
+    end_dt = datetime.strptime(args.end, "%Y-%m-%d")
+
+    if end_dt <= start_dt:
+        msg = "Invalid date range: end date must be later than start date (half-open range [start, end))."
+        logger.error(msg)
+        raise ValueError(msg)
+
     try:
         client = EntsoeClient(
             api_key=config["api"]["key"],
@@ -38,9 +46,6 @@ def main():
         # In MVP we can hardcode the datasets or load them from config
         datasets = [DayAheadPricesDataset()]
         
-        start_dt = datetime.strptime(args.start, "%Y-%m-%d")
-        end_dt = datetime.strptime(args.end, "%Y-%m-%d")
-
         pipeline.run(datasets, start_dt, end_dt)
         
         logger.info("Download completed successfully")

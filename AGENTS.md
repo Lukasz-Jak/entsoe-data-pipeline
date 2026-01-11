@@ -187,3 +187,15 @@ AI agents must NOT:
 ## AGENTS.MD MODIFICATION
 AI agents must not modify AGENTS.md unless explicitly instructed by the user.
 If a task conflicts with AGENTS.md, the agent must stop and ask for guidance.
+
+## Language conventions
+
+All source code, log messages, error messages, CLI output, comments, and user-facing communication **must be written in English**.
+
+This rule applies to:
+- logging messages
+- exceptions and error texts
+- CLI help and validation messages
+- documentation generated or modified by the agent
+
+Do not introduce user-facing messages in any other language.

@@ -74,6 +74,25 @@ Optional flags:
 
 * `--force` — overwrite existing outputs
 
+### Date range semantics
+
+The pipeline uses a half-open date range: **[start_date, end_date)**.
+
+This means:
+- `--start` is inclusive
+- `--end` is exclusive
+- `--start` and `--end` must not be equal
+
+To download data for a single day, the end date must be set to the **following day**.
+
+Example (download data for 2024-01-01):
+
+```bash
+python main.py --start 2024-01-01 --end 2024-01-02
+```
+
+Using the same value for --start and --end will result in an empty dataset.
+
 ## Development Notes
 
 * Python dependencies must be installed in an isolated virtual environment.
