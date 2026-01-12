@@ -199,3 +199,15 @@ This rule applies to:
 - documentation generated or modified by the agent
 
 Do not introduce user-facing messages in any other language.
+
+## Testing expectations
+
+The project currently uses the standard `unittest` framework.
+
+When introducing any non-trivial change (new feature, refactor, or behavioral change), the agent should:
+- consider whether the change affects decision logic or data flow,
+- add or update a corresponding unit test where reasonable,
+- keep tests minimal, fast, and focused on logic (not external APIs).
+
+Tests are intended to protect core behavior during further development, not to provide full coverage.
+

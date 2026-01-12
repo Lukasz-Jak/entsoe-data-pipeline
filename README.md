@@ -104,3 +104,11 @@ Using the same value for --start and --end will result in an empty dataset.
 This repository represents an MVP intended as a clean foundation for future
 extensions (e.g. additional datasets, alternative storage backends, or orchestration),
 without requiring refactoring of core architecture.
+
+## Testing
+
+The project includes a minimal unit test suite based on Python’s built-in `unittest` framework.
+
+Tests are intentionally lightweight at the MVP stage and focus on core decision logic.  
+As the project evolves, new functionality should be accompanied by appropriate unit tests.
+
