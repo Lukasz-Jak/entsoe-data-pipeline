@@ -22,6 +22,17 @@ Out of scope:
 * cloud infrastructure
 * analytics, reporting, or visualization
 
+## Supported datasets (current)
+
+The following datasets are currently implemented:
+
+- **Day-ahead prices** — electricity market prices for Poland
+- **Total load** — actual load and load forecast
+- **Actual generation per production type** — full generation mix by source
+
+Each dataset is processed independently and stored as daily CSV/XLSX files.
+
+
 ## High-Level Architecture
 
 * **API Client**
