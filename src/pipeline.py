@@ -28,13 +28,19 @@ class Pipeline:
             for dataset in datasets:
                 filename = dataset.get_filename(current_date)
                 
-                if not self.force and self.io_handler.exists(dataset.name, date_path, filename):
-                    logger.info(f"Skipped: {dataset.name} for {current_date.date()} (already exists)")
+                missing_formats = self.io_handler.get_missing_formats(dataset.name, date_path, filename)
+                
+                if not self.force and not missing_formats:
+                    logger.info(f"Skipped: {dataset.name} for {current_date.date()} (all formats exist)")
                     skipped_count += 1
                     continue
 
                 try:
-                    logger.info(f"Processing {dataset.name} for {current_date.date()}...")
+                    if not self.force and missing_formats:
+                        logger.info(f"Processing {dataset.name} for {current_date.date()} due to missing formats: {missing_formats}")
+                    else:
+                        logger.info(f"Processing {dataset.name} for {current_date.date()}...")
+                    
                     raw_data = dataset.fetch(self.client, current_date, day_end)
                     if raw_data is None or raw_data.empty:
                         logger.warning(f"No data for {dataset.name} on {current_date.date()}")

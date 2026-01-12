@@ -10,13 +10,14 @@ class IOHandler:
         self.base_path = base_path
         self.formats = [f.lower() for f in formats]
 
-    def exists(self, dataset_name: str, date_path: str, filename: str) -> bool:
-        """Check if data already exists in any of the configured formats."""
+    def get_missing_formats(self, dataset_name: str, date_path: str, filename: str) -> List[str]:
+        """Return a list of missing formats for the given dataset and date."""
+        missing = []
         for fmt in self.formats:
             full_path = os.path.join(self.base_path, dataset_name, date_path, f"{filename}.{fmt}")
-            if os.path.exists(full_path):
-                return True
-        return False
+            if not os.path.exists(full_path):
+                missing.append(fmt)
+        return missing
 
     def write(self, df: pd.DataFrame, dataset_name: str, date_path: str, filename: str) -> None:
         """Write DataFrame to configured formats."""
