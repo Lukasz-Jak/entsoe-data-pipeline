@@ -8,8 +8,6 @@ logger = logging.getLogger(__name__)
 
 class EntsoeClient:
     def __init__(self, api_key: str, retry_count: int = 5, backoff_factor: float = 1.0):
-        if not api_key:
-            raise ValueError("ENTSOE_API_KEY is required")
         self.client = EntsoePandasClient(api_key=api_key)
         self.retry_count = retry_count
         self.backoff_factor = backoff_factor
