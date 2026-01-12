@@ -8,6 +8,7 @@ from src.io_handler import IOHandler
 from src.pipeline import Pipeline
 from src.datasets.day_ahead_prices import DayAheadPricesDataset
 from src.datasets.total_load import TotalLoadDataset
+from src.datasets.actual_generation import ActualGenerationDataset
 
 def main():
     parser = argparse.ArgumentParser(description="entsoe-data-pipeline MVP")
@@ -47,7 +48,8 @@ def main():
         # In MVP we can hardcode the datasets or load them from config
         datasets = [
             DayAheadPricesDataset(),
-            TotalLoadDataset()
+            TotalLoadDataset(),
+            ActualGenerationDataset()
         ]
         
         pipeline.run(datasets, start_dt, end_dt)

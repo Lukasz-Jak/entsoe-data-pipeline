@@ -2,6 +2,7 @@ import unittest
 import pandas as pd
 from datetime import datetime, timezone
 from src.datasets.total_load import TotalLoadDataset
+from src.datasets.actual_generation import ActualGenerationDataset
 
 class TestTotalLoadDataset(unittest.TestCase):
     def setUp(self):
@@ -34,6 +35,30 @@ class TestTotalLoadDataset(unittest.TestCase):
         
         self.assertIsNone(normalized_df.index.tz)
         self.assertEqual(normalized_df.index[0], pd.Timestamp("2024-01-01 00:00:00"))
+
+class TestActualGenerationDataset(unittest.TestCase):
+    def setUp(self):
+        self.dataset = ActualGenerationDataset()
+
+    def test_normalize_multiindex_columns(self):
+        # Create MultiIndex columns
+        columns = pd.MultiIndex.from_tuples([
+            ('Biomass', 'Actual Aggregated'),
+            ('Solar', 'Actual Aggregated'),
+            ('Wind Onshore', 'Actual Aggregated')
+        ])
+        dr = pd.date_range(start="2024-01-01", periods=1, freq="H", tz="UTC")
+        df = pd.DataFrame([[10, 20, 30]], index=dr, columns=columns)
+        
+        normalized_df = self.dataset.normalize(df)
+        
+        # Verify flattened columns
+        expected_cols = ['biomass_actual_aggregated', 'solar_actual_aggregated', 'wind_onshore_actual_aggregated']
+        self.assertEqual(list(normalized_df.columns), expected_cols)
+        
+        # Verify index
+        self.assertIsNone(normalized_df.index.tz)
+        self.assertEqual(normalized_df.index.name, "timestamp_utc")
 
 if __name__ == "__main__":
     unittest.main()
