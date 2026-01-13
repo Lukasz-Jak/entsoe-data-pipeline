@@ -9,6 +9,7 @@ from src.pipeline import Pipeline
 from src.datasets.day_ahead_prices import DayAheadPricesDataset
 from src.datasets.total_load import TotalLoadDataset
 from src.datasets.actual_generation import ActualGenerationDataset
+from src.datasets.generation_forecast_wind_solar import GenerationForecastWindSolarDataset
 
 def main():
     parser = argparse.ArgumentParser(description="entsoe-data-pipeline MVP")
@@ -49,7 +50,8 @@ def main():
         datasets = [
             DayAheadPricesDataset(),
             TotalLoadDataset(),
-            ActualGenerationDataset()
+            ActualGenerationDataset(),
+            GenerationForecastWindSolarDataset()
         ]
         
         pipeline.run(datasets, start_dt, end_dt)
