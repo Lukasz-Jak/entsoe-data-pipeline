@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import sys
 from datetime import datetime, timezone
 from src.config import load_config
@@ -19,6 +20,7 @@ def main():
     parser.add_argument("--force", action="store_true", help="Overwrite existing files")
     parser.add_argument("--list-datasets", action="store_true", help="List available datasets and exit")
     parser.add_argument("--datasets", type=str, help="Comma-separated list of dataset names to execute")
+    parser.add_argument("--dry-run", action="store_true", help="Preview execution plan without making changes")
     args = parser.parse_args()
 
     # In MVP we can hardcode the datasets or load them from config
@@ -86,6 +88,44 @@ def main():
             base_path=config["storage"].get("base_path", "outputs"),
             formats=config["storage"].get("formats", ["csv"])
         )
+
+        if args.dry_run:
+            from datetime import timedelta
+            from src.utils import to_utc, format_date_path
+            
+            start_utc = to_utc(start_dt).replace(hour=0, minute=0, second=0, microsecond=0)
+            end_utc = to_utc(end_dt)
+            num_days = (end_utc.date() - start_utc.date()).days
+            
+            print("--- DRY RUN MODE ---")
+            print(f"Date range: {start_utc.date()} to {end_utc.date()} ({num_days} days)")
+            print(f"Datasets: {', '.join([d.__class__.__name__ for d in datasets])}")
+            print("\nExecution Plan:")
+            
+            current_date = start_utc
+            while current_date < end_utc:
+                date_path = format_date_path(current_date)
+                for dataset in datasets:
+                    filename = dataset.get_filename(current_date)
+                    missing = io_handler.get_missing_formats(dataset.name, date_path, filename)
+                    
+                    status = "WILL PROCESS"
+                    if not args.force and not missing:
+                        status = "SKIPPED (exists)"
+                    elif args.force:
+                        status = "WILL OVERWRITE"
+                        
+                    planned_paths = [os.path.join(io_handler.base_path, dataset.name, date_path, f"{filename}.{fmt}") for fmt in io_handler.formats]
+                    
+                    print(f"  - [{status}] {dataset.__class__.__name__} for {current_date.date()}")
+                    for p in planned_paths:
+                        exists_str = "(already exists)" if os.path.exists(p) else ""
+                        print(f"    -> {p} {exists_str}")
+                
+                current_date += timedelta(days=1)
+            
+            print("\nDry run completed. Pipeline execution skipped.")
+            sys.exit(0)
 
         pipeline = Pipeline(client, io_handler, force=args.force)
         
