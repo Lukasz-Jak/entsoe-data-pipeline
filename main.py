@@ -1,6 +1,7 @@
 import argparse
 import logging
-from datetime import datetime
+import sys
+from datetime import datetime, timezone
 from src.config import load_config
 from src.logging_config import setup_logging
 from src.api_client import EntsoeClient
@@ -24,15 +25,23 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info("Starting entsoe-data-pipeline")
 
-    start_dt = datetime.strptime(args.start, "%Y-%m-%d")
-    end_dt = datetime.strptime(args.end, "%Y-%m-%d")
-
-    if end_dt <= start_dt:
-        msg = "Invalid date range: end date must be later than start date (half-open range [start, end))."
-        logger.error(msg)
-        raise ValueError(msg)
-
     try:
+        try:
+            start_dt = datetime.strptime(args.start, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            end_dt = datetime.strptime(args.end, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            logger.error("Invalid date format. Please use YYYY-MM-DD.")
+            sys.exit(1)
+
+        now_utc = datetime.now(timezone.utc)
+        if start_dt > now_utc or end_dt > now_utc:
+            logger.error("Start and end dates must not be in the future (UTC).")
+            sys.exit(1)
+
+        if end_dt <= start_dt:
+            logger.error("Invalid date range: end date must be later than start date (half-open range [start, end)).")
+            sys.exit(1)
+
         client = EntsoeClient(
             api_key=config["api"]["key"],
             retry_count=config["api"].get("retry_count", 5),
@@ -60,6 +69,7 @@ def main():
 
     except Exception:
         logger.exception("Application failed")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
