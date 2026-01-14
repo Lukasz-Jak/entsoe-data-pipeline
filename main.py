@@ -18,6 +18,7 @@ def main():
     parser.add_argument("--end", type=str, help="End date (YYYY-MM-DD)")
     parser.add_argument("--force", action="store_true", help="Overwrite existing files")
     parser.add_argument("--list-datasets", action="store_true", help="List available datasets and exit")
+    parser.add_argument("--datasets", type=str, help="Comma-separated list of dataset names to execute")
     args = parser.parse_args()
 
     # In MVP we can hardcode the datasets or load them from config
@@ -32,6 +33,22 @@ def main():
         for dataset in datasets:
             print(dataset.__class__.__name__)
         sys.exit(0)
+
+    if args.datasets is not None:
+        selected_names = [name.strip() for name in args.datasets.split(",") if name.strip()]
+        if not selected_names:
+            print("Error: --datasets value cannot be empty.", file=sys.stderr)
+            sys.exit(1)
+        
+        available_datasets = {d.__class__.__name__: d for d in datasets}
+        unknown = [name for name in selected_names if name not in available_datasets]
+        if unknown:
+            print(f"Error: Unknown dataset(s): {', '.join(unknown)}", file=sys.stderr)
+            print(f"Available datasets: {', '.join(available_datasets.keys())}", file=sys.stderr)
+            sys.exit(1)
+        
+        # Preserve original order
+        datasets = [d for d in datasets if d.__class__.__name__ in selected_names]
 
     if not args.start or not args.end:
         parser.error("the following arguments are required: --start, --end (unless --list-datasets is used)")

@@ -55,5 +55,34 @@ class TestCLI(unittest.TestCase):
         self.assertNotIn("Starting entsoe-data-pipeline", result.stdout)
         self.assertNotIn("Starting entsoe-data-pipeline", result.stderr)
 
+    def test_datasets_selection(self):
+        # We need a date range where files already exist to avoid actual API calls
+        # 2024-01-01 was used in previous sessions and skipped
+        result = self.run_cli(["--start", "2024-01-01", "--end", "2024-01-02", "--datasets", "TotalLoadDataset"])
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Skipped: total_load", result.stdout + result.stderr)
+        self.assertNotIn("Skipped: day_ahead_prices", result.stdout + result.stderr)
+        self.assertNotIn("Traceback", result.stderr + result.stdout)
+
+    def test_datasets_invalid_selection(self):
+        result = self.run_cli(["--start", "2024-01-01", "--end", "2024-01-02", "--datasets", "InvalidDataset"])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Unknown dataset(s): InvalidDataset", result.stdout + result.stderr)
+        self.assertNotIn("Traceback", result.stderr + result.stdout)
+
+    def test_datasets_empty_selection(self):
+        result = self.run_cli(["--start", "2024-01-01", "--end", "2024-01-02", "--datasets", ""])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cannot be empty", result.stdout + result.stderr)
+        self.assertNotIn("Traceback", result.stderr + result.stdout)
+
+    def test_list_datasets_ignores_datasets(self):
+        # --list-datasets should ignore --datasets and just list all
+        result = self.run_cli(["--list-datasets", "--datasets", "TotalLoadDataset"])
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("DayAheadPricesDataset", result.stdout)
+        self.assertIn("TotalLoadDataset", result.stdout)
+        self.assertNotIn("Starting entsoe-data-pipeline", result.stdout + result.stderr)
+
 if __name__ == "__main__":
     unittest.main()
