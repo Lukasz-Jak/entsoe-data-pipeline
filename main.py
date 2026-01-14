@@ -14,10 +14,27 @@ from src.datasets.generation_forecast_wind_solar import GenerationForecastWindSo
 
 def main():
     parser = argparse.ArgumentParser(description="entsoe-data-pipeline MVP")
-    parser.add_argument("--start", type=str, required=True, help="Start date (YYYY-MM-DD)")
-    parser.add_argument("--end", type=str, required=True, help="End date (YYYY-MM-DD)")
+    parser.add_argument("--start", type=str, help="Start date (YYYY-MM-DD)")
+    parser.add_argument("--end", type=str, help="End date (YYYY-MM-DD)")
     parser.add_argument("--force", action="store_true", help="Overwrite existing files")
+    parser.add_argument("--list-datasets", action="store_true", help="List available datasets and exit")
     args = parser.parse_args()
+
+    # In MVP we can hardcode the datasets or load them from config
+    datasets = [
+        DayAheadPricesDataset(),
+        TotalLoadDataset(),
+        ActualGenerationDataset(),
+        GenerationForecastWindSolarDataset()
+    ]
+
+    if args.list_datasets:
+        for dataset in datasets:
+            print(dataset.__class__.__name__)
+        sys.exit(0)
+
+    if not args.start or not args.end:
+        parser.error("the following arguments are required: --start, --end (unless --list-datasets is used)")
 
     config = load_config()
     setup_logging(config.get("logging", {}).get("level", "INFO"))
@@ -54,14 +71,6 @@ def main():
         )
 
         pipeline = Pipeline(client, io_handler, force=args.force)
-        
-        # In MVP we can hardcode the datasets or load them from config
-        datasets = [
-            DayAheadPricesDataset(),
-            TotalLoadDataset(),
-            ActualGenerationDataset(),
-            GenerationForecastWindSolarDataset()
-        ]
         
         pipeline.run(datasets, start_dt, end_dt)
         
