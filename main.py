@@ -59,7 +59,6 @@ def main():
     setup_logging(config.get("logging", {}).get("level", "INFO"))
     
     logger = logging.getLogger(__name__)
-    logger.info("Starting entsoe-data-pipeline")
 
     try:
         try:
@@ -77,6 +76,9 @@ def main():
         if end_dt <= start_dt:
             logger.error("Invalid date range: end date must be later than start date (half-open range [start, end)).")
             sys.exit(1)
+
+        if not args.dry_run:
+            logger.info("Starting entsoe-data-pipeline")
 
         client = EntsoeClient(
             api_key=config["api"]["key"],

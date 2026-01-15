@@ -84,5 +84,36 @@ class TestCLI(unittest.TestCase):
         self.assertIn("TotalLoadDataset", result.stdout)
         self.assertNotIn("Starting entsoe-data-pipeline", result.stdout + result.stderr)
 
+    def test_dry_run_exits_cleanly(self):
+        result = self.run_cli(["--start", "2025-01-01", "--end", "2025-01-02", "--dry-run"])
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--- DRY RUN MODE ---", result.stdout)
+        self.assertIn("Dry run completed. Pipeline execution skipped.", result.stdout)
+        self.assertNotIn("Traceback", result.stderr + result.stdout)
+        # Verify it doesn't actually start the pipeline
+        self.assertNotIn("Starting entsoe-data-pipeline", result.stdout + result.stderr)
+
+    def test_dry_run_respects_dataset_selection(self):
+        result = self.run_cli([
+            "--start", "2025-01-01", "--end", "2025-01-02", 
+            "--dry-run", 
+            "--datasets", "TotalLoadDataset"
+        ])
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("TotalLoadDataset", result.stdout)
+        self.assertNotIn("DayAheadPricesDataset", result.stdout)
+        self.assertNotIn("ActualGenerationDataset", result.stdout)
+        self.assertNotIn("GenerationForecastWindSolarDataset", result.stdout)
+
+    def test_dry_run_with_list_datasets(self):
+        # --list-datasets should take precedence over --dry-run
+        result = self.run_cli(["--list-datasets", "--dry-run"])
+        self.assertEqual(result.returncode, 0)
+        # Should contain dataset list
+        self.assertIn("TotalLoadDataset", result.stdout)
+        # Should NOT contain dry run specific headers
+        self.assertNotIn("--- DRY RUN MODE ---", result.stdout)
+        self.assertNotIn("Execution Plan:", result.stdout)
+
 if __name__ == "__main__":
     unittest.main()
