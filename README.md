@@ -26,9 +26,10 @@ Out of scope:
 
 The following datasets are currently implemented:
 
-- **Day-ahead prices** — electricity market prices for Poland
-- **Total load** — actual load and load forecast
-- **Actual generation per production type** — full generation mix by source
+- Day-ahead prices
+- Total load
+- Actual generation per production type
+- Generation forecast for wind & solar
 
 Each dataset is processed independently and stored as daily CSV/XLSX files.
 
@@ -82,8 +83,22 @@ python main.py --start YYYY-MM-DD --end YYYY-MM-DD
 ```
 
 Optional flags:
+* --force — overwrite existing outputs
+* --list-datasets — list available datasets and exit
+* --datasets — comma-separated list of datasets to execute
+* --dry-run — preview execution plan without downloading data or writing files
 
-* `--force` — overwrite existing outputs
+Examples:
+
+List available datasets:
+python main.py --list-datasets
+
+Run only selected datasets:
+python main.py --start 2025-01-01 --end 2025-01-03 --datasets TotalLoadDataset
+
+Preview execution plan without side effects:
+python main.py --start 2025-01-01 --end 2025-01-03 --dry-run
+
 
 ### Date range semantics
 
