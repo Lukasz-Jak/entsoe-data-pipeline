@@ -2,6 +2,7 @@ import logging
 import time
 from typing import Any, Optional
 from entsoe import EntsoePandasClient
+from entsoe.exceptions import NoMatchingDataError
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -14,11 +15,19 @@ class EntsoeClient:
 
     def fetch_data(self, fetch_func_name: str, **kwargs: Any) -> pd.DataFrame:
         """Fetch data with exponential backoff retry logic."""
+        try:
+            fetch_func = getattr(self.client, fetch_func_name)
+        except AttributeError:
+            logger.exception(f"Unknown fetch function: {fetch_func_name}")
+            raise
+
         attempt = 0
         while attempt < self.retry_count:
             try:
-                fetch_func = getattr(self.client, fetch_func_name)
                 return fetch_func(**kwargs)
+            except NoMatchingDataError:
+                # Do not retry on NoMatchingDataError - it's a valid "no data" response
+                raise
             except Exception as e:
                 attempt += 1
                 if attempt == self.retry_count:

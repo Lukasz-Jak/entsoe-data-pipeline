@@ -1,6 +1,7 @@
 import logging
 import pandas as pd
 from datetime import datetime
+from entsoe.exceptions import NoMatchingDataError
 from src.api_client import EntsoeClient
 from src.datasets.base import BaseDataset
 
@@ -16,14 +17,21 @@ class ActualGenerationPerUnitDataset(BaseDataset):
         Fetch actual generation per generation unit for Poland (PL).
         Handles cases where no data is available by logging a warning and returning an empty DataFrame.
         """
-        df = client.fetch_data(
-            "query_generation_per_plant",
-            country_code="PL",
-            start=pd.Timestamp(start),
-            end=pd.Timestamp(end),
-            psr_type=None,
-            include_eic=False
-        )
+        try:
+            df = client.fetch_data(
+                "query_generation_per_plant",
+                country_code="PL",
+                start=pd.Timestamp(start),
+                end=pd.Timestamp(end),
+                psr_type=None,
+                include_eic=False
+            )
+        except NoMatchingDataError:
+            logger.warning(
+                f"No data published yet for {self.name} on {start.date()} (ENTSO-E reporting delay (NoMatchingDataError)). "
+                f"Dataset will be skipped for this date."
+            )
+            return pd.DataFrame()
         
         if df.empty:
             logger.warning(
