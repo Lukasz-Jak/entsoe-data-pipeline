@@ -1,6 +1,8 @@
 import unittest
+from unittest.mock import MagicMock
 import pandas as pd
 from datetime import datetime, timezone
+from entsoe.exceptions import NoMatchingDataError
 from src.datasets.total_load import TotalLoadDataset
 from src.datasets.actual_generation import ActualGenerationDataset
 from src.datasets.generation_forecast_wind_solar import GenerationForecastWindSolarDataset
@@ -233,6 +235,31 @@ class TestActualGenerationPerUnitDataset(unittest.TestCase):
         normalized2 = self.dataset.normalize(df_input2)
         
         pd.testing.assert_frame_equal(normalized1, normalized2)
+
+    def test_fetch_no_matching_data_error(self):
+        # Mock the client
+        client = MagicMock()
+        # Configure client.fetch_data to raise NoMatchingDataError
+        client.fetch_data.side_effect = NoMatchingDataError("No data found")
+        
+        start = datetime(2026, 1, 1)
+        end = datetime(2026, 1, 2)
+        
+        # Call fetch()
+        result = self.dataset.fetch(client, start, end)
+        
+        # Assertions
+        self.assertIsInstance(result, pd.DataFrame)
+        self.assertTrue(result.empty)
+        # Verify fetch_data was called with correct arguments
+        client.fetch_data.assert_called_once_with(
+            "query_generation_per_plant",
+            country_code="PL",
+            start=pd.Timestamp(start),
+            end=pd.Timestamp(end),
+            psr_type=None,
+            include_eic=False
+        )
 
 if __name__ == "__main__":
     unittest.main()
