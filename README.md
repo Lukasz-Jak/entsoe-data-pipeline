@@ -30,6 +30,9 @@ The following datasets are currently implemented:
 - Total load
 - Actual generation per production type
 - Generation forecast for wind & solar
+- Generation forecast (day-ahead)
+- Actual generation per generation unit
+
 
 Each dataset is processed independently and stored as daily CSV/XLSX files.
 
@@ -118,6 +121,22 @@ python main.py --start 2024-01-01 --end 2024-01-02
 ```
 
 Using the same value for --start and --end will result in an empty dataset.
+
+
+## Handling missing or delayed ENTSO-E data
+
+Some ENTSO-E datasets (e.g. generation per unit) are published with delays
+and may not be available for recent or future dates.
+
+If no data is available for a given dataset and date:
+- the dataset is skipped for that date,
+- a warning is logged,
+- no empty CSV/XLSX files are written,
+- the pipeline continues processing other datasets and dates.
+
+This behavior is intentional and prevents misleading “empty” outputs
+from being treated as successfully downloaded data.
+
 
 ## Development Notes
 
