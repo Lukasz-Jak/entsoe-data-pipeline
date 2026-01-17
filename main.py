@@ -13,6 +13,7 @@ from src.datasets.total_load import TotalLoadDataset
 from src.datasets.actual_generation import ActualGenerationDataset
 from src.datasets.generation_forecast_wind_solar import GenerationForecastWindSolarDataset
 from src.datasets.generation_forecast_day_ahead import GenerationForecastDayAheadDataset
+from src.datasets.actual_generation_per_unit import ActualGenerationPerUnitDataset
 
 def main():
     parser = argparse.ArgumentParser(description="entsoe-data-pipeline MVP")
@@ -30,7 +31,8 @@ def main():
         TotalLoadDataset(),
         ActualGenerationDataset(),
         GenerationForecastWindSolarDataset(),
-        GenerationForecastDayAheadDataset()
+        GenerationForecastDayAheadDataset(),
+        ActualGenerationPerUnitDataset()
     ]
 
     if args.list_datasets:
