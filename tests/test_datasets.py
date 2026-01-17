@@ -5,6 +5,7 @@ from src.datasets.total_load import TotalLoadDataset
 from src.datasets.actual_generation import ActualGenerationDataset
 from src.datasets.generation_forecast_wind_solar import GenerationForecastWindSolarDataset
 from src.datasets.generation_forecast_day_ahead import GenerationForecastDayAheadDataset
+from src.datasets.actual_generation_per_unit import ActualGenerationPerUnitDataset
 
 class TestTotalLoadDataset(unittest.TestCase):
     def setUp(self):
@@ -164,6 +165,66 @@ class TestGenerationForecastDayAheadDataset(unittest.TestCase):
         # Calling normalize() on identical inputs produces identical outputs
         dr = pd.date_range(start="2024-01-01", periods=3, freq="H", tz="UTC")
         df = pd.DataFrame({"Forecast": [10.0, 20.0, 30.0]}, index=dr)
+        
+        df_input1 = df.copy()
+        df_input2 = df.copy()
+        
+        normalized1 = self.dataset.normalize(df_input1)
+        normalized2 = self.dataset.normalize(df_input2)
+        
+        pd.testing.assert_frame_equal(normalized1, normalized2)
+
+class TestActualGenerationPerUnitDataset(unittest.TestCase):
+    def setUp(self):
+        self.dataset = ActualGenerationPerUnitDataset()
+
+    def test_normalize_multiindex_columns(self):
+        # Input: DataFrame with pd.MultiIndex columns similar to ENTSO-E per-unit output
+        # (Plant Name, Unit Name, Some Value)
+        columns = pd.MultiIndex.from_tuples([
+            ('Bełchatów', 'Unit 1', 'Actual Generation'),
+            ('Kozienice', 'Unit 1', 'Actual Generation')
+        ])
+        dr = pd.date_range(start="2024-01-01", periods=1, freq="h", tz="UTC")
+        df = pd.DataFrame([[100.0, 200.0]], index=dr, columns=columns)
+        
+        normalized_df = self.dataset.normalize(df)
+        
+        # Assert columns are flattened to snake_case
+        expected_cols = ["bełchatów_unit_1_actual_generation", "kozienice_unit_1_actual_generation"]
+        self.assertEqual(list(normalized_df.columns), expected_cols)
+
+    def test_normalize_timezone_normalization(self):
+        # Input: index with a non-UTC timezone (Europe/Warsaw)
+        dr = pd.date_range(start="2024-01-01 01:00:00", periods=1, freq="h", tz="Europe/Warsaw")
+        df = pd.DataFrame({"value": [123.4]}, index=dr)
+        
+        normalized_df = self.dataset.normalize(df)
+        
+        # Assert timestamps are converted to UTC
+        self.assertEqual(normalized_df.index[0], pd.Timestamp("2024-01-01 00:00:00"))
+        # Assert index is timezone-naive
+        self.assertIsNone(normalized_df.index.tz)
+        # Assert index name is exactly timestamp_utc
+        self.assertEqual(normalized_df.index.name, "timestamp_utc")
+
+    def test_normalize_non_empty_preserved(self):
+        # Input: non-empty DataFrame
+        dr = pd.date_range(start="2024-01-01", periods=2, freq="h", tz="UTC")
+        df = pd.DataFrame({"val": [1.0, 2.0]}, index=dr)
+        
+        normalized_df = self.dataset.normalize(df)
+        
+        # Assert DataFrame is not empty
+        self.assertFalse(normalized_df.empty)
+        # Assert values are preserved (no aggregation, no row loss)
+        self.assertEqual(len(normalized_df), 2)
+        self.assertEqual(normalized_df["val"].tolist(), [1.0, 2.0])
+
+    def test_normalize_deterministic(self):
+        # Calling normalize() on identical inputs produces identical outputs
+        dr = pd.date_range(start="2024-01-01", periods=3, freq="h", tz="UTC")
+        df = pd.DataFrame({"Val": [10.0, 20.0, 30.0]}, index=dr)
         
         df_input1 = df.copy()
         df_input2 = df.copy()
