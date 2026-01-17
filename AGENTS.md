@@ -91,10 +91,12 @@ and extensible without introducing additional infrastructure.
 - Pipeline logic must not change when adding a new dataset.
 
 ## TIME HANDLING RULES
-- All persisted timestamps must be in UTC.
+- All internal processing uses timezone-aware UTC timestamps.
 - Storage must never contain mixed timezones.
 - Time normalization must be centralized and reusable.
-- Use timezone-aware datetimes only.
+- Timezone information may be removed at the storage boundary
+  (e.g. for Excel compatibility), but semantic UTC meaning must be preserved.
+
 
 ## FILE OUTPUT RULES
 - Allowed output formats: CSV, XLSX.
@@ -129,10 +131,13 @@ and extensible without introducing additional infrastructure.
 ## ERROR HANDLING PHILOSOPHY
 - API client:
   - handles network errors, HTTP errors, and retry/backoff.
-  - raises clear, explicit exceptions after retry exhaustion.
+  - does NOT retry on ENTSO-E `NoMatchingDataError` (missing data is not a technical failure).
+  - re-raises `NoMatchingDataError` immediately.
 - Dataset layer:
-  - must not swallow exceptions.
-  - may add contextual information but must re-raise errors.
+  - handles domain-level semantics (e.g. missing or delayed ENTSO-E data).
+  - may catch `NoMatchingDataError`, log a warning, and skip the affected date.
+  - must not silently swallow unexpected exceptions.
+
 - Pipeline:
   - captures execution outcome (success / skipped / failed).
   - logs failures with context.
@@ -206,8 +211,7 @@ The project currently uses the standard `unittest` framework.
 
 When introducing any non-trivial change (new feature, refactor, or behavioral change), the agent should:
 - consider whether the change affects decision logic or data flow,
-- add or update a corresponding unit test where reasonable,
-- keep tests minimal, fast, and focused on logic (not external APIs).
+- add or update a corresponding unit test where reasonable (especially for dataset-level logic),
 
 Tests are intended to protect core behavior during further development, not to provide full coverage.
 
