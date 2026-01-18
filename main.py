@@ -14,6 +14,7 @@ from src.datasets.actual_generation import ActualGenerationDataset
 from src.datasets.generation_forecast_wind_solar import GenerationForecastWindSolarDataset
 from src.datasets.generation_forecast_day_ahead import GenerationForecastDayAheadDataset
 from src.datasets.actual_generation_per_unit import ActualGenerationPerUnitDataset
+from src.datasets.scheduled_commercial_exchanges_intraday import ScheduledCommercialExchangesIntradayDataset
 
 def main():
     parser = argparse.ArgumentParser(description="entsoe-data-pipeline MVP")
@@ -25,6 +26,12 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Preview execution plan without making changes")
     args = parser.parse_args()
 
+    config = load_config()
+    
+    # Extract config for specific datasets
+    sce_config = config.get("scheduled_commercial_exchanges", {})
+    sce_counterpart_areas = sce_config.get("counterpart_areas", [])
+
     # In MVP we can hardcode the datasets or load them from config
     datasets = [
         DayAheadPricesDataset(),
@@ -32,7 +39,8 @@ def main():
         ActualGenerationDataset(),
         GenerationForecastWindSolarDataset(),
         GenerationForecastDayAheadDataset(),
-        ActualGenerationPerUnitDataset()
+        ActualGenerationPerUnitDataset(),
+        ScheduledCommercialExchangesIntradayDataset(counterpart_areas=sce_counterpart_areas)
     ]
 
     if args.list_datasets:
@@ -59,7 +67,6 @@ def main():
     if not args.start or not args.end:
         parser.error("the following arguments are required: --start, --end (unless --list-datasets is used)")
 
-    config = load_config()
     setup_logging(config.get("logging", {}).get("level", "INFO"))
     
     logger = logging.getLogger(__name__)

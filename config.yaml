@@ -9,3 +9,35 @@ storage:
 
 logging:
   level: "INFO"
+
+  # -----------------------------------------------------------------------------------
+  # Configuration for Scheduled Commercial Exchanges datasets (Intraday / Day-Ahead).
+  #
+  # "counterpart_areas" defines a list of potential bidding zones / countries
+  # for which scheduled commercial exchanges with Poland (PL) will be queried.
+  #
+  # For each entry X in this list, the dataset will query both directions:
+  #   - PL -> X
+  #   - X -> PL
+  #
+  # This list represents *potential* market counterparties, not physical neighbors.
+  # Narrowing the list reduces the number of ENTSO-E API calls and log noise.
+  #
+  # Example:
+  #   counterpart_areas:
+  #     - DE
+  #     - CZ
+  #     - SK
+  #     - LT
+  #     - SE
+  #     - AT
+  #
+scheduled_commercial_exchanges:
+  counterpart_areas:
+    - DE
+    - CZ
+    - SK
+    - LT
+    - SE
+    - AT
+  # ----------------------------------------------------------------------------------
