@@ -15,6 +15,7 @@ from src.datasets.generation_forecast_wind_solar import GenerationForecastWindSo
 from src.datasets.generation_forecast_day_ahead import GenerationForecastDayAheadDataset
 from src.datasets.actual_generation_per_unit import ActualGenerationPerUnitDataset
 from src.datasets.scheduled_commercial_exchanges_intraday import ScheduledCommercialExchangesIntradayDataset
+from src.datasets.scheduled_commercial_exchanges_day_ahead import ScheduledCommercialExchangesDayAheadDataset
 
 def main():
     parser = argparse.ArgumentParser(description="entsoe-data-pipeline MVP")
@@ -40,7 +41,8 @@ def main():
         GenerationForecastWindSolarDataset(),
         GenerationForecastDayAheadDataset(),
         ActualGenerationPerUnitDataset(),
-        ScheduledCommercialExchangesIntradayDataset(counterpart_areas=sce_counterpart_areas)
+        ScheduledCommercialExchangesIntradayDataset(counterpart_areas=sce_counterpart_areas),
+        ScheduledCommercialExchangesDayAheadDataset(counterpart_areas=sce_counterpart_areas)
     ]
 
     if args.list_datasets:

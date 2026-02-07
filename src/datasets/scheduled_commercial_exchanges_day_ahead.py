@@ -8,9 +8,9 @@ from src.datasets.base import BaseDataset
 
 logger = logging.getLogger(__name__)
 
-class ScheduledCommercialExchangesIntradayDataset(BaseDataset):
+class ScheduledCommercialExchangesDayAheadDataset(BaseDataset):
     """
-    Dataset for Scheduled Commercial Exchanges (Intraday) between Poland and other bidding zones.
+    Dataset for Scheduled Commercial Exchanges (Day-Ahead) between Poland and other bidding zones.
     """
     
     def __init__(self, counterpart_areas: List[str]):
@@ -18,11 +18,11 @@ class ScheduledCommercialExchangesIntradayDataset(BaseDataset):
 
     @property
     def name(self) -> str:
-        return "scheduled_commercial_exchanges_intraday"
+        return "scheduled_commercial_exchanges_day_ahead"
 
     def fetch(self, client: EntsoeClient, start: datetime, end: datetime) -> pd.DataFrame:
         """
-        Fetch intraday scheduled commercial exchanges for PL from/to configured counterpart areas.
+        Fetch day-ahead scheduled commercial exchanges for PL from/to configured counterpart areas.
         """
         if not self._counterpart_areas:
             logger.warning(
@@ -54,7 +54,7 @@ class ScheduledCommercialExchangesIntradayDataset(BaseDataset):
                         country_code_to=country_to,
                         start=start_ts,
                         end=end_ts,
-                        dayahead=False
+                        dayahead=True
                     )
                     
                     if data is not None and not data.empty:
