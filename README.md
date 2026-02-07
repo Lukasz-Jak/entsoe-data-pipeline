@@ -32,6 +32,8 @@ The following datasets are currently implemented:
 - Generation forecast for wind & solar
 - Generation forecast (day-ahead)
 - Actual generation per generation unit
+- Scheduled commercial exchanges (Intraday)
+- Scheduled commercial exchanges (Day-Ahead)
 
 
 Each dataset is processed independently and stored as daily CSV/XLSX files.
@@ -76,6 +78,24 @@ An example environment file is provided:
 ```
 .env.example
 ```
+
+
+### Scheduled Commercial Exchanges configuration
+
+Scheduled Commercial Exchanges datasets (Intraday and Day-Ahead) require explicit configuration
+of counterpart bidding zones in `config.yaml`:
+
+```yaml
+scheduled_commercial_exchanges:
+  counterpart_areas:
+    - DE
+    - CZ
+```
+Each area code represents a bidding zone paired with Poland (PL).
+For each configured zone, both directions are fetched automatically (PL → X and X → PL).
+
+If no counterpart areas are configured, both datasets are skipped with a warning.
+
 
 ## Execution
 
