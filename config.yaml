@@ -40,4 +40,15 @@ scheduled_commercial_exchanges:
     - LT
     - SE
     - AT
+
+crossborder_physical_flows:
+  base_area: PL
+  counterpart_areas:
+    - DE
+    - CZ
+    - SK
+    - SE
+    - LT
+    - AT
+    - UA
   # ----------------------------------------------------------------------------------

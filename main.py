@@ -16,6 +16,7 @@ from src.datasets.generation_forecast_day_ahead import GenerationForecastDayAhea
 from src.datasets.actual_generation_per_unit import ActualGenerationPerUnitDataset
 from src.datasets.scheduled_commercial_exchanges_intraday import ScheduledCommercialExchangesIntradayDataset
 from src.datasets.scheduled_commercial_exchanges_day_ahead import ScheduledCommercialExchangesDayAheadDataset
+from src.datasets.crossborder_physical_flows import CrossborderPhysicalFlowsDataset
 
 def main():
     parser = argparse.ArgumentParser(description="entsoe-data-pipeline MVP")
@@ -33,6 +34,9 @@ def main():
     sce_config = config.get("scheduled_commercial_exchanges", {})
     sce_counterpart_areas = sce_config.get("counterpart_areas", [])
 
+    cpf_config = config.get("crossborder_physical_flows", {})
+    cpf_counterpart_areas = cpf_config.get("counterpart_areas", [])
+
     # In MVP we can hardcode the datasets or load them from config
     datasets = [
         DayAheadPricesDataset(),
@@ -42,7 +46,8 @@ def main():
         GenerationForecastDayAheadDataset(),
         ActualGenerationPerUnitDataset(),
         ScheduledCommercialExchangesIntradayDataset(counterpart_areas=sce_counterpart_areas),
-        ScheduledCommercialExchangesDayAheadDataset(counterpart_areas=sce_counterpart_areas)
+        ScheduledCommercialExchangesDayAheadDataset(counterpart_areas=sce_counterpart_areas),
+        CrossborderPhysicalFlowsDataset(counterpart_areas=cpf_counterpart_areas)
     ]
 
     if args.list_datasets:
