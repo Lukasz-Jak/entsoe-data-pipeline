@@ -60,7 +60,9 @@ and extensible without introducing additional infrastructure.
 - A Python file may contain multiple related functions or classes,
   but must address a single, clearly defined responsibility.
 - API access, pipeline control, IO, and transformations must be separated.
-- No API calls outside the API client module.
+- No direct HTTP / entsoe-py API calls outside the API client module.
+  Datasets are expected to call the provided client.fetch_data(...) interface — this is correct and intentional.
+
 - No IO logic inside dataset definitions.
 
 ## ENTRYPOINT RULES
@@ -80,6 +82,7 @@ and extensible without introducing additional infrastructure.
 - Pipeline must remain dataset-agnostic.
 - Pipeline must not implement API-specific or file-format-specific logic.
 - Pipeline must not contain error recovery, retry, or backoff logic.
+  Controlled skipping of missing datasets (e.g. NoMatchingDataError, missing formats) is intentional and part of normal pipeline flow.
 
 ## DATASET RULES
 - Each dataset represents one logical ENTSO-E data product.
@@ -93,7 +96,12 @@ and extensible without introducing additional infrastructure.
 ## TIME HANDLING RULES
 - All internal processing uses timezone-aware UTC timestamps.
 - Storage must never contain mixed timezones.
-- Time normalization must be centralized and reusable.
+- Time normalization should eventually be centralized and reusable.
+
+NOTE: At present, strict defensive UTC normalization is implemented only for selected datasets (e.g. crossborder_physical_flows).
+Repository-wide unification of time handling must be done ONLY via an explicit user-requested audit/refactor step.
+Agents must not proactively refactor time handling across datasets.
+
 - Timezone information may be removed at the storage boundary
   (e.g. for Excel compatibility), but semantic UTC meaning must be preserved.
 

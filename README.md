@@ -34,6 +34,8 @@ The following datasets are currently implemented:
 - Actual generation per generation unit
 - Scheduled commercial exchanges (Intraday)
 - Scheduled commercial exchanges (Day-Ahead)
+- Cross-border physical flows
+
 
 
 Each dataset is processed independently and stored as daily CSV/XLSX files.
@@ -95,6 +97,25 @@ Each area code represents a bidding zone paired with Poland (PL).
 For each configured zone, both directions are fetched automatically (PL → X and X → PL).
 
 If no counterpart areas are configured, both datasets are skipped with a warning.
+
+
+### Crossborder Physical Flows configuration
+
+Crossborder Physical Flows dataset requires explicit configuration of counterpart bidding zones in `config.yaml`:
+
+```yaml
+crossborder_physical_flows:
+  counterpart_areas:
+    - DE
+    - CZ
+    - SK
+```
+Each area code represents a bidding zone paired with Poland (PL). For each configured zone, both directions are fetched automatically (PL → X and X → PL).
+
+If no counterpart areas are configured, the dataset is skipped with a warning.
+
+
+
 
 
 ## Execution
@@ -172,8 +193,12 @@ without requiring refactoring of core architecture.
 
 ## Testing
 
-The project includes a minimal unit test suite based on Python’s built-in `unittest` framework.
+The project includes a unit test suite based on Python’s built-in `unittest` framework.
 
-Tests are intentionally lightweight at the MVP stage and focus on core decision logic.  
-As the project evolves, new functionality should be accompanied by appropriate unit tests.
+Tests are intentionally lightweight but cover:
 
+- dataset fetch edge cases
+- bidirectional exchange logic
+- exception propagation
+- deterministic output behavior
+- UTC normalization (strict, defensive normalization is fully implemented for `crossborder_physical_flows`; other datasets currently rely on legacy behavior)
