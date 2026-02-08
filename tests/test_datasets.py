@@ -10,6 +10,7 @@ from src.datasets.generation_forecast_day_ahead import GenerationForecastDayAhea
 from src.datasets.actual_generation_per_unit import ActualGenerationPerUnitDataset
 from src.datasets.scheduled_commercial_exchanges_intraday import ScheduledCommercialExchangesIntradayDataset
 from src.datasets.scheduled_commercial_exchanges_day_ahead import ScheduledCommercialExchangesDayAheadDataset
+from src.datasets.crossborder_physical_flows import CrossborderPhysicalFlowsDataset
 
 class TestTotalLoadDataset(unittest.TestCase):
     def setUp(self):
@@ -540,6 +541,193 @@ class TestScheduledCommercialExchangesDayAheadDataset(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 dataset.fetch(mock_client, self.start, self.end)
             mock_log_exception.assert_called_once()
+
+class TestCrossborderPhysicalFlowsDataset(unittest.TestCase):
+    def setUp(self):
+        self.start = datetime(2026, 1, 1)
+        self.end = datetime(2026, 1, 2)
+
+    def test_fetch_returns_empty_df_when_no_counterpart_areas(self):
+        dataset = CrossborderPhysicalFlowsDataset(counterpart_areas=[])
+        mock_client = MagicMock()
+        
+        with self.assertLogs("src.datasets.crossborder_physical_flows", level="WARNING") as cm:
+            result = dataset.fetch(mock_client, self.start, self.end)
+        
+        self.assertIsInstance(result, pd.DataFrame)
+        self.assertTrue(result.empty)
+        mock_client.fetch_data.assert_not_called()
+        self.assertEqual(len(cm.records), 1)
+
+    def test_fetch_calls_both_directions_for_each_counterpart(self):
+        dataset = CrossborderPhysicalFlowsDataset(counterpart_areas=["DE"])
+        mock_client = MagicMock()
+        
+        dr = pd.date_range(start=self.start, end=self.end, freq="h", tz="UTC", inclusive="left")
+        series_pl_de = pd.Series([100.0] * len(dr), index=dr)
+        series_de_pl = pd.Series([200.0] * len(dr), index=dr)
+        
+        mock_client.fetch_data.side_effect = [series_pl_de, series_de_pl]
+        
+        result = dataset.fetch(mock_client, self.start, self.end)
+        
+        self.assertEqual(mock_client.fetch_data.call_count, 2)
+        
+        # Check calls
+        calls = mock_client.fetch_data.call_args_list
+        # Call 1: PL -> DE
+        self.assertEqual(calls[0].kwargs["country_code_from"], "PL")
+        self.assertEqual(calls[0].kwargs["country_code_to"], "DE")
+        
+        # Verify start/end are UTC-aware pd.Timestamps
+        self.assertIsInstance(calls[0].kwargs["start"], pd.Timestamp)
+        self.assertIsInstance(calls[0].kwargs["end"], pd.Timestamp)
+        self.assertEqual(str(calls[0].kwargs["start"].tz), "UTC")
+        self.assertEqual(str(calls[0].kwargs["end"].tz), "UTC")
+        
+        # Call 2: DE -> PL
+        self.assertEqual(calls[1].kwargs["country_code_from"], "DE")
+        self.assertEqual(calls[1].kwargs["country_code_to"], "PL")
+
+        self.assertIsInstance(calls[1].kwargs["start"], pd.Timestamp)
+        self.assertIsInstance(calls[1].kwargs["end"], pd.Timestamp)
+        self.assertEqual(str(calls[1].kwargs["start"].tz), "UTC")
+        self.assertEqual(str(calls[1].kwargs["end"].tz), "UTC")
+        
+        self.assertIn("physical_flow_pl_to_de", result.columns)
+        self.assertIn("physical_flow_de_to_pl", result.columns)
+        self.assertEqual(len(result.columns), 2)
+
+    def test_fetch_handles_NoMatchingDataError_per_direction(self):
+        # CZ and DE -> sorted order: CZ, DE
+        # Calls: PL->CZ, CZ->PL, PL->DE, DE->PL
+        dataset = CrossborderPhysicalFlowsDataset(counterpart_areas=["DE", "CZ"])
+        mock_client = MagicMock()
+        
+        dr = pd.date_range(start=self.start, end=self.end, freq="h", tz="UTC", inclusive="left")
+        valid_series = pd.Series([100.0] * len(dr), index=dr)
+        
+        mock_client.fetch_data.side_effect = [
+            valid_series,                    # PL -> CZ: OK
+            NoMatchingDataError("No data"),  # CZ -> PL: Error
+            NoMatchingDataError("No data"),  # PL -> DE: Error
+            valid_series                     # DE -> PL: OK
+        ]
+        
+        with self.assertLogs("src.datasets.crossborder_physical_flows", level="WARNING") as cm:
+            result = dataset.fetch(mock_client, self.start, self.end)
+        
+        self.assertEqual(len(result.columns), 2)
+        self.assertIn("physical_flow_pl_to_cz", result.columns)
+        self.assertIn("physical_flow_de_to_pl", result.columns)
+        self.assertEqual(len(cm.records), 2)
+
+    def test_fetch_skips_unexpected_multicolumn_dataframe(self):
+        dataset = CrossborderPhysicalFlowsDataset(counterpart_areas=["DE"])
+        mock_client = MagicMock()
+        
+        dr = pd.date_range(start=self.start, end=self.end, freq="h", tz="UTC", inclusive="left")
+        multi_col_df = pd.DataFrame({"col1": [1.0], "col2": [2.0]}, index=dr[:1])
+        valid_series = pd.Series([3.0] * len(dr), index=dr)
+        
+        mock_client.fetch_data.side_effect = [multi_col_df, valid_series]
+        
+        with self.assertLogs("src.datasets.crossborder_physical_flows", level="WARNING") as cm:
+            result = dataset.fetch(mock_client, self.start, self.end)
+            
+        self.assertIn("physical_flow_de_to_pl", result.columns)
+        self.assertNotIn("physical_flow_pl_to_de", result.columns)
+        self.assertEqual(len(result.columns), 1)
+        self.assertEqual(len(cm.records), 1)
+
+    def test_fetch_series_and_single_column_dataframe_normalization(self):
+        dataset = CrossborderPhysicalFlowsDataset(counterpart_areas=["DE"])
+        mock_client = MagicMock()
+        
+        dr = pd.date_range(start=self.start, end=self.end, freq="h", tz="UTC", inclusive="left")
+        # PL -> DE: 1-column DF
+        df_pl_de = pd.DataFrame({"x": [100.0] * len(dr)}, index=dr)
+        # DE -> PL: Series
+        series_de_pl = pd.Series([200.0] * len(dr), index=dr)
+        
+        mock_client.fetch_data.side_effect = [df_pl_de, series_de_pl]
+        
+        result = dataset.fetch(mock_client, self.start, self.end)
+        
+        self.assertIn("physical_flow_pl_to_de", result.columns)
+        self.assertIn("physical_flow_de_to_pl", result.columns)
+        self.assertEqual(len(result.columns), 2)
+
+    def test_fetch_propagates_unexpected_exception_and_logs_context(self):
+        dataset = CrossborderPhysicalFlowsDataset(counterpart_areas=["DE"])
+        mock_client = MagicMock()
+        mock_client.fetch_data.side_effect = RuntimeError("boom")
+        
+        with patch("src.datasets.crossborder_physical_flows.logger.exception") as mock_log:
+            with self.assertRaises(RuntimeError):
+                dataset.fetch(mock_client, self.start, self.end)
+            
+            mock_log.assert_called_once()
+            log_msg = mock_log.call_args[0][0]
+            self.assertIn("[crossborder_physical_flows]", log_msg)
+            self.assertIn("direction PL -> DE", log_msg)
+            self.assertIn("start=", log_msg)
+            self.assertIn("end=", log_msg)
+
+    def test_normalize_converts_warsaw_to_utc_naive_and_sets_index_name(self):
+        dataset = CrossborderPhysicalFlowsDataset(counterpart_areas=["DE"])
+        dr = pd.date_range(start="2024-01-01 01:00:00", periods=1, freq="h", tz="Europe/Warsaw")
+        df = pd.DataFrame({"physical_flow_pl_to_de": [100.0]}, index=dr)
+        
+        normalized_df = dataset.normalize(df)
+        
+        self.assertIsNone(normalized_df.index.tz)
+        self.assertEqual(normalized_df.index[0], pd.Timestamp("2024-01-01 00:00:00"))
+        self.assertEqual(normalized_df.index.name, "timestamp_utc")
+
+    def test_normalize_handles_tz_naive_index_as_utc_and_makes_naive(self):
+        dataset = CrossborderPhysicalFlowsDataset(counterpart_areas=["DE"])
+        dr = pd.date_range(start="2024-01-01 00:00:00", periods=1, freq="h")
+        df = pd.DataFrame({"physical_flow_pl_to_de": [100.0]}, index=dr)
+        
+        normalized_df = dataset.normalize(df)
+        
+        self.assertIsNone(normalized_df.index.tz)
+        self.assertEqual(normalized_df.index[0], pd.Timestamp("2024-01-01 00:00:00"))
+        self.assertEqual(normalized_df.index.name, "timestamp_utc")
+
+    def test_normalize_handles_non_datetime_index(self):
+        dataset = CrossborderPhysicalFlowsDataset(counterpart_areas=["DE"])
+        idx = ["2024-01-01 00:00:00", "2024-01-01 01:00:00"]
+        df = pd.DataFrame({"physical_flow_pl_to_de": [100.0, 200.0]}, index=idx)
+        
+        normalized_df = dataset.normalize(df)
+        
+        self.assertIsInstance(normalized_df.index, pd.DatetimeIndex)
+        self.assertIsNone(normalized_df.index.tz)
+        self.assertEqual(normalized_df.index.name, "timestamp_utc")
+        self.assertEqual(normalized_df.index[0], pd.Timestamp("2024-01-01 00:00:00"))
+
+    def test_normalize_pair_group_column_order(self):
+        # areas sorted CZ, DE
+        dataset = CrossborderPhysicalFlowsDataset(counterpart_areas=["DE", "CZ"])
+        dr = pd.date_range(start="2024-01-01", periods=1, freq="h", tz="UTC")
+        df = pd.DataFrame({
+            "physical_flow_de_to_pl": [1.0],
+            "physical_flow_pl_to_de": [2.0],
+            "physical_flow_cz_to_pl": [3.0],
+            "physical_flow_pl_to_cz": [4.0]
+        }, index=dr)
+        
+        normalized_df = dataset.normalize(df)
+        
+        expected_cols = [
+            "physical_flow_pl_to_cz",
+            "physical_flow_cz_to_pl",
+            "physical_flow_pl_to_de",
+            "physical_flow_de_to_pl"
+        ]
+        self.assertEqual(list(normalized_df.columns), expected_cols)
 
 if __name__ == "__main__":
     unittest.main()
