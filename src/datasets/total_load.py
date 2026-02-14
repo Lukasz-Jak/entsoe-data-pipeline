@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import datetime
 from src.api_client import EntsoeClient
 from src.datasets.base import BaseDataset
+from src.utils import to_utc, ensure_utc_index
 
 class TotalLoadDataset(BaseDataset):
     @property
@@ -10,20 +11,28 @@ class TotalLoadDataset(BaseDataset):
 
     def fetch(self, client: EntsoeClient, start: datetime, end: datetime) -> pd.DataFrame:
         """Fetch actual and forecast total load for Poland (PL)."""
+        start_ts = pd.Timestamp(to_utc(start))
+        if start_ts.tz is None:
+            start_ts = start_ts.tz_localize("UTC")
+
+        end_ts = pd.Timestamp(to_utc(end))
+        if end_ts.tz is None:
+            end_ts = end_ts.tz_localize("UTC")
+
         # Actual Load
         actual_load = client.fetch_data(
             "query_load",
             country_code="PL",
-            start=pd.Timestamp(start),
-            end=pd.Timestamp(end)
+            start=start_ts,
+            end=end_ts
         )
         
         # Forecast Load
         forecast_load = client.fetch_data(
             "query_load_forecast",
             country_code="PL",
-            start=pd.Timestamp(start),
-            end=pd.Timestamp(end)
+            start=start_ts,
+            end=end_ts
         )
 
         # Merge actual and forecast
@@ -47,9 +56,4 @@ class TotalLoadDataset(BaseDataset):
     def normalize(self, df: pd.DataFrame) -> pd.DataFrame:
         """Centralized time normalization to UTC.
         Removes timezone info for Excel compatibility while keeping UTC semantics."""
-        # Ensure UTC and make naive for Excel support
-        if df.index.tz is not None:
-            df.index = df.index.tz_convert("UTC").tz_localize(None)
-            
-        df.index.name = "timestamp_utc"
-        return df
+        return ensure_utc_index(df, make_naive_for_storage=True)
