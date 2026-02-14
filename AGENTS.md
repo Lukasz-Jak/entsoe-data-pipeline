@@ -94,16 +94,48 @@ and extensible without introducing additional infrastructure.
 - Pipeline logic must not change when adding a new dataset.
 
 ## TIME HANDLING RULES
-- All internal processing uses timezone-aware UTC timestamps.
-- Storage must never contain mixed timezones.
-- Time normalization should eventually be centralized and reusable.
 
-NOTE: At present, strict defensive UTC normalization is implemented only for selected datasets (e.g. crossborder_physical_flows).
-Repository-wide unification of time handling must be done ONLY via an explicit user-requested audit/refactor step.
-Agents must not proactively refactor time handling across datasets.
+### Canonical Time Contract (MANDATORY)
 
-- Timezone information may be removed at the storage boundary
-  (e.g. for Excel compatibility), but semantic UTC meaning must be preserved.
+- Canonical in-memory time representation is UTC.
+- All API queries must use explicit UTC-aware timestamps.
+- All dataset indexes must represent UTC.
+- Stored outputs must use index/column name: `timestamp_utc`.
+- Stored timestamps are UTC-naive for Excel compatibility, but semantically UTC.
+
+Timezone stripping is allowed ONLY at the storage boundary.
+
+UTC is the single source of truth.
+Any future local-time representations (e.g. Europe/Warsaw) must be derived from canonical UTC data.
+
+### Index Normalization
+
+A shared utility function must be used for all dataset index normalization (located in `src/utils.py`):
+
+    ensure_utc_index(df: pd.DataFrame, make_naive_for_storage: bool = True)
+
+This function is responsible for:
+
+- guaranteeing DatetimeIndex
+- enforcing UTC
+- handling:
+  - non-datetime index
+  - tz-aware index
+  - tz-naive index
+- optionally stripping timezone for storage
+- setting index name to `timestamp_utc`
+
+Dataset-specific normalization logic must NOT duplicate this behavior.
+
+### Refactoring Policy
+
+- CrossborderPhysicalFlowsDataset is the first dataset migrated to the shared utility.
+- Other datasets will be refactored incrementally ONLY when explicitly instructed.
+- Agents must NOT proactively refactor time handling across datasets.
+
+No silent assumptions about tz-naive meaning UTC are allowed outside the shared utility.
+Do NOT add or modify tests during implementation work; tests are introduced only in a separate session when explicitly requested.
+
 
 
 ## FILE OUTPUT RULES
