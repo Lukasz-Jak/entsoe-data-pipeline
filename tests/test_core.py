@@ -1,8 +1,58 @@
 import unittest
+import pandas as pd
 from unittest.mock import patch, MagicMock
 from datetime import datetime
-from src.utils import format_date_path
+from src.utils import format_date_path, ensure_utc_index
 from src.io_handler import IOHandler
+
+class TestEnsureUtcIndex(unittest.TestCase):
+    def test_tz_aware_to_naive_storage(self):
+        # TEST 1 — tz-aware index (Europe/Warsaw) -> UTC semantics, then storage-naive
+        warsaw_idx = pd.date_range(start="2024-07-01 02:00:00", periods=1, freq="h", tz="Europe/Warsaw")
+        df = pd.DataFrame({"val": [1]}, index=warsaw_idx)
+        
+        expected = warsaw_idx.tz_convert("UTC").tz_localize(None)[0]
+        
+        out = ensure_utc_index(df)
+        
+        self.assertIsNone(out.index.tz)
+        self.assertEqual(out.index[0], expected)
+        self.assertEqual(out.index.name, "timestamp_utc")
+
+    def test_tz_naive_to_utc_naive_storage(self):
+        # TEST 2 — tz-naive DatetimeIndex treated as UTC and made storage-naive
+        naive_idx = pd.date_range(start="2024-01-01 00:00:00", periods=2, freq="h")
+        df = pd.DataFrame({"val": [1, 2]}, index=naive_idx)
+        
+        out = ensure_utc_index(df)
+        
+        self.assertIsNone(out.index.tz)
+        self.assertEqual(out.index[0], pd.Timestamp("2024-01-01 00:00:00"))
+        self.assertEqual(out.index.name, "timestamp_utc")
+        self.assertEqual(list(out["val"]), [1, 2])
+
+    def test_string_index_to_utc_naive_storage(self):
+        # TEST 3 — non-datetime index (strings) converted to DatetimeIndex with UTC semantics and storage-naive
+        idx = ["2024-01-01 00:00:00", "2024-01-01 01:00:00"]
+        df = pd.DataFrame({"val": [1, 2]}, index=idx)
+        
+        out = ensure_utc_index(df)
+        
+        self.assertIsInstance(out.index, pd.DatetimeIndex)
+        self.assertIsNone(out.index.tz)
+        self.assertEqual(out.index[0], pd.Timestamp("2024-01-01 00:00:00"))
+        self.assertEqual(out.index.name, "timestamp_utc")
+
+    def test_keep_tz_aware_utc(self):
+        # TEST 4 — make_naive_for_storage=False keeps tz-aware UTC index
+        warsaw_idx = pd.date_range(start="2024-07-01 02:00:00", periods=1, freq="h", tz="Europe/Warsaw")
+        df = pd.DataFrame({"val": [1]}, index=warsaw_idx)
+        
+        out = ensure_utc_index(df, make_naive_for_storage=False)
+        
+        self.assertIsNotNone(out.index.tz)
+        self.assertEqual(str(out.index.tz), "UTC")
+        self.assertEqual(out.index.name, "timestamp_utc")
 
 class TestUtils(unittest.TestCase):
     def test_format_date_path(self):
