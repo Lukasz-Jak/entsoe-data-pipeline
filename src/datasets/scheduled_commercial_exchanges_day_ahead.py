@@ -5,6 +5,7 @@ from typing import List
 from entsoe.exceptions import NoMatchingDataError
 from src.api_client import EntsoeClient
 from src.datasets.base import BaseDataset
+from src.utils import ensure_utc_index, to_utc
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +37,13 @@ class ScheduledCommercialExchangesDayAheadDataset(BaseDataset):
         # PL is always one side of the exchange
         base_country = "PL"
         
-        start_ts = pd.Timestamp(start)
-        end_ts = pd.Timestamp(end)
+        start_ts = pd.Timestamp(to_utc(start))
+        if start_ts.tz is None:
+            start_ts = start_ts.tz_localize("UTC")
+
+        end_ts = pd.Timestamp(to_utc(end))
+        if end_ts.tz is None:
+            end_ts = end_ts.tz_localize("UTC")
 
         for area in self._counterpart_areas:
             # Check both directions: base -> area and area -> base
@@ -101,12 +107,23 @@ class ScheduledCommercialExchangesDayAheadDataset(BaseDataset):
             return df
 
         # Ensure UTC and make naive for storage compatibility
-        if df.index.tz is not None:
-            df.index = df.index.tz_convert("UTC").tz_localize(None)
-            
-        df.index.name = "timestamp_utc"
+        df = ensure_utc_index(df, make_naive_for_storage=True)
         
-        # Sort columns deterministically
-        df = df.reindex(sorted(df.columns), axis=1)
+        # Build deterministic pair-group column order
+        base = "pl"
+        areas = sorted({area.lower() for area in self._counterpart_areas})
+
+        ordered_cols = []
+        for x in areas:
+            preferred = [
+                f"scheduled_exchange_{base}_to_{x}",
+                f"scheduled_exchange_{x}_to_{base}",
+            ]
+            for col in preferred:
+                if col in df.columns:
+                    ordered_cols.append(col)
+
+        remaining_cols = sorted([c for c in df.columns if c not in ordered_cols])
+        df = df.reindex(columns=ordered_cols + remaining_cols)
         
         return df

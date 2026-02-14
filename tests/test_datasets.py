@@ -386,11 +386,11 @@ class TestScheduledCommercialExchangesIntradayDataset(unittest.TestCase):
             index=dr
         )
         
-        # Alphabetical order: de_to_pl comes before pl_to_de
+        # PL -> X comes before X -> PL
         normalized1 = self.dataset.normalize(df.copy())
         normalized2 = self.dataset.normalize(df.copy())
         
-        self.assertEqual(list(normalized1.columns), ["scheduled_exchange_de_to_pl", "scheduled_exchange_pl_to_de"])
+        self.assertEqual(list(normalized1.columns), ["scheduled_exchange_pl_to_de", "scheduled_exchange_de_to_pl"])
         pd.testing.assert_frame_equal(normalized1, normalized2)
 
     def test_dataset_does_not_load_config_in_fetch(self):
@@ -521,7 +521,7 @@ class TestScheduledCommercialExchangesDayAheadDataset(unittest.TestCase):
         normalized1 = self.dataset.normalize(df.copy())
         normalized2 = self.dataset.normalize(df.copy())
         
-        self.assertEqual(list(normalized1.columns), ["scheduled_exchange_de_to_pl", "scheduled_exchange_pl_to_de"])
+        self.assertEqual(list(normalized1.columns), ["scheduled_exchange_pl_to_de", "scheduled_exchange_de_to_pl"])
         pd.testing.assert_frame_equal(normalized1, normalized2)
 
     def test_dataset_does_not_load_config_in_fetch(self):
