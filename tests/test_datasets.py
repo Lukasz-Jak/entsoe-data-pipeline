@@ -44,6 +44,47 @@ class TestTotalLoadDataset(unittest.TestCase):
         self.assertIsNone(normalized_df.index.tz)
         self.assertEqual(normalized_df.index[0], pd.Timestamp("2024-01-01 00:00:00"))
 
+    def test_fetch_passes_utc_aware_pd_timestamps_to_client(self):
+        from datetime import timezone
+        mock_client = MagicMock()
+        # query_load and query_load_forecast usually return Series or DataFrame
+        dr = pd.date_range(start="2026-01-01", periods=24, freq="h", tz="UTC")
+        mock_client.fetch_data.return_value = pd.Series([100.0] * 24, index=dr)
+        
+        start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        end = datetime(2026, 1, 2, tzinfo=timezone.utc)
+        
+        self.dataset.fetch(mock_client, start, end)
+        
+        # 1) Assert fetch_data was called exactly twice (query_load and query_load_forecast)
+        self.assertEqual(mock_client.fetch_data.call_count, 2)
+        
+        calls = mock_client.fetch_data.call_args_list
+        
+        for i in range(2):
+            kwargs = calls[i].kwargs
+            # 2) For BOTH calls:
+            # - kwargs["start"] is instance of pd.Timestamp
+            # - kwargs["end"] is instance of pd.Timestamp
+            # - str(kwargs["start"].tz) == "UTC"
+            # - str(kwargs["end"].tz) == "UTC"
+            self.assertIsInstance(kwargs["start"], pd.Timestamp)
+            self.assertIsInstance(kwargs["end"], pd.Timestamp)
+            self.assertEqual(str(kwargs["start"].tz), "UTC")
+            self.assertEqual(str(kwargs["end"].tz), "UTC")
+            
+            # 3) Optionally assert country_code == "PL" for both calls
+            self.assertEqual(kwargs["country_code"], "PL")
+            
+            # 4) Optionally assert start and end are identical across both calls
+            self.assertEqual(kwargs["start"], pd.Timestamp(start))
+            self.assertEqual(kwargs["end"], pd.Timestamp(end))
+        
+        # Verify the methods called
+        method_names = [call.args[0] if call.args else call.kwargs.get('method') for call in calls]
+        self.assertIn("query_load", method_names)
+        self.assertIn("query_load_forecast", method_names)
+
 class TestActualGenerationDataset(unittest.TestCase):
     def setUp(self):
         self.dataset = ActualGenerationDataset()
