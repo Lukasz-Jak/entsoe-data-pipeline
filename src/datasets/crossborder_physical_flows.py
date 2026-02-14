@@ -5,6 +5,7 @@ from typing import List
 from entsoe.exceptions import NoMatchingDataError
 from src.api_client import EntsoeClient
 from src.datasets.base import BaseDataset
+from src.utils import ensure_utc_index, to_utc
 
 logger = logging.getLogger(__name__)
 
@@ -32,19 +33,18 @@ class CrossborderPhysicalFlowsDataset(BaseDataset):
             )
             return pd.DataFrame()
 
-        def _ensure_utc_ts(dt: datetime) -> pd.Timestamp:
-            ts = pd.Timestamp(dt)
-            if ts.tz is None:
-                return ts.tz_localize("UTC")
-            return ts.tz_convert("UTC")
-
         all_results = []
         
         # PL is always one side of the flow
         base_country = "PL"
         
-        start_ts = _ensure_utc_ts(start)
-        end_ts = _ensure_utc_ts(end)
+        start_ts = pd.Timestamp(to_utc(start))
+        if start_ts.tz is None:
+            start_ts = start_ts.tz_localize("UTC")
+        
+        end_ts = pd.Timestamp(to_utc(end))
+        if end_ts.tz is None:
+            end_ts = end_ts.tz_localize("UTC")
 
         for area in self._counterpart_areas:
             # Check both directions: base -> area and area -> base
@@ -109,15 +109,7 @@ class CrossborderPhysicalFlowsDataset(BaseDataset):
             return df
 
         # Ensure UTC and make naive for storage compatibility
-        idx = df.index
-        if not isinstance(idx, pd.DatetimeIndex):
-            df.index = pd.to_datetime(idx, utc=True).tz_localize(None)
-        elif getattr(idx, "tz", None) is not None:
-            df.index = idx.tz_convert("UTC").tz_localize(None)
-        else:
-            df.index = idx.tz_localize("UTC").tz_localize(None)
-            
-        df.index.name = "timestamp_utc"
+        df = ensure_utc_index(df, make_naive_for_storage=True)
         
         # Build deterministic pair-group column order
         base = "pl"
