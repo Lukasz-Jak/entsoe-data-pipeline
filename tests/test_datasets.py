@@ -305,10 +305,21 @@ class TestScheduledCommercialExchangesIntradayDataset(unittest.TestCase):
         self.assertEqual(calls[0].kwargs["country_code_to"], "DE")
         self.assertFalse(calls[0].kwargs["dayahead"])
         
+        # Verify start/end are UTC-aware pd.Timestamps
+        self.assertIsInstance(calls[0].kwargs["start"], pd.Timestamp)
+        self.assertIsInstance(calls[0].kwargs["end"], pd.Timestamp)
+        self.assertEqual(str(calls[0].kwargs["start"].tz), "UTC")
+        self.assertEqual(str(calls[0].kwargs["end"].tz), "UTC")
+        
         # Call 2: DE -> PL
         self.assertEqual(calls[1].kwargs["country_code_from"], "DE")
         self.assertEqual(calls[1].kwargs["country_code_to"], "PL")
         self.assertFalse(calls[1].kwargs["dayahead"])
+
+        self.assertIsInstance(calls[1].kwargs["start"], pd.Timestamp)
+        self.assertIsInstance(calls[1].kwargs["end"], pd.Timestamp)
+        self.assertEqual(str(calls[1].kwargs["start"].tz), "UTC")
+        self.assertEqual(str(calls[1].kwargs["end"].tz), "UTC")
         
         self.assertIn("scheduled_exchange_pl_to_de", result.columns)
         self.assertIn("scheduled_exchange_de_to_pl", result.columns)
@@ -452,10 +463,21 @@ class TestScheduledCommercialExchangesDayAheadDataset(unittest.TestCase):
         self.assertEqual(calls[0].kwargs["country_code_to"], "DE")
         self.assertTrue(calls[0].kwargs["dayahead"])
         
+        # Verify start/end are UTC-aware pd.Timestamps
+        self.assertIsInstance(calls[0].kwargs["start"], pd.Timestamp)
+        self.assertIsInstance(calls[0].kwargs["end"], pd.Timestamp)
+        self.assertEqual(str(calls[0].kwargs["start"].tz), "UTC")
+        self.assertEqual(str(calls[0].kwargs["end"].tz), "UTC")
+        
         # Call 2: DE -> PL
         self.assertEqual(calls[1].kwargs["country_code_from"], "DE")
         self.assertEqual(calls[1].kwargs["country_code_to"], "PL")
         self.assertTrue(calls[1].kwargs["dayahead"])
+
+        self.assertIsInstance(calls[1].kwargs["start"], pd.Timestamp)
+        self.assertIsInstance(calls[1].kwargs["end"], pd.Timestamp)
+        self.assertEqual(str(calls[1].kwargs["start"].tz), "UTC")
+        self.assertEqual(str(calls[1].kwargs["end"].tz), "UTC")
         
         self.assertIn("scheduled_exchange_pl_to_de", result.columns)
         self.assertIn("scheduled_exchange_de_to_pl", result.columns)
