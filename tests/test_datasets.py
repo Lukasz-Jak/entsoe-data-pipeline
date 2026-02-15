@@ -11,6 +11,7 @@ from src.datasets.actual_generation_per_unit import ActualGenerationPerUnitDatas
 from src.datasets.scheduled_commercial_exchanges_intraday import ScheduledCommercialExchangesIntradayDataset
 from src.datasets.scheduled_commercial_exchanges_day_ahead import ScheduledCommercialExchangesDayAheadDataset
 from src.datasets.crossborder_physical_flows import CrossborderPhysicalFlowsDataset
+from src.datasets.day_ahead_prices import DayAheadPricesDataset
 
 class TestTotalLoadDataset(unittest.TestCase):
     def setUp(self):
@@ -418,6 +419,59 @@ class TestActualGenerationPerUnitDataset(unittest.TestCase):
         self.assertEqual(kwargs["country_code"], "PL")
         self.assertIsNone(kwargs["psr_type"])
         self.assertFalse(kwargs["include_eic"])
+        self.assertIsInstance(kwargs["start"], pd.Timestamp)
+        self.assertIsInstance(kwargs["end"], pd.Timestamp)
+        self.assertEqual(str(kwargs["start"].tz), "UTC")
+        self.assertEqual(str(kwargs["end"].tz), "UTC")
+        self.assertEqual(kwargs["start"], pd.Timestamp(start))
+        self.assertEqual(kwargs["end"], pd.Timestamp(end))
+
+class TestDayAheadPricesDataset(unittest.TestCase):
+    def setUp(self):
+        self.dataset = DayAheadPricesDataset()
+
+    def test_normalize_series_input(self):
+        # Series with UTC-aware index should become DataFrame with column 'price'
+        dr = pd.date_range(start="2024-01-01", periods=3, freq="h", tz="UTC")
+        series = pd.Series([10.0, 20.0, 30.0], index=dr, name="whatever")
+        normalized = self.dataset.normalize(series)
+
+        self.assertIsInstance(normalized, pd.DataFrame)
+        self.assertEqual(list(normalized.columns), ["price"])
+        self.assertIsNone(normalized.index.tz)
+        self.assertEqual(normalized.index.name, "timestamp_utc")
+        self.assertEqual(normalized["price"].tolist(), [10.0, 20.0, 30.0])
+
+    def test_normalize_timezone_conversion(self):
+        # Europe/Warsaw -> UTC-naive
+        dr = pd.date_range(start="2024-01-01 01:00:00", periods=1, freq="h", tz="Europe/Warsaw")
+        df = pd.DataFrame({"price": [100.0]}, index=dr)
+
+        normalized = self.dataset.normalize(df)
+
+        self.assertIsNone(normalized.index.tz)
+        self.assertEqual(normalized.index.name, "timestamp_utc")
+        self.assertEqual(normalized.index[0], pd.Timestamp("2024-01-01 00:00:00"))
+
+    def test_fetch_passes_utc_aware_pd_timestamps_to_client(self):
+        from datetime import timezone
+        mock_client = MagicMock()
+        dr = pd.date_range(start="2026-01-01", periods=1, freq="h", tz="UTC")
+        mock_client.fetch_data.return_value = pd.Series([100.0], index=dr, name="price")
+
+        start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        end = datetime(2026, 1, 2, tzinfo=timezone.utc)
+
+        self.dataset.fetch(mock_client, start, end)
+
+        self.assertEqual(mock_client.fetch_data.call_count, 1)
+        args, kwargs = mock_client.fetch_data.call_args
+
+        # Verify method name used by dataset
+        self.assertEqual(args[0], "query_day_ahead_prices")
+
+        # Verify kwargs
+        self.assertEqual(kwargs["country_code"], "PL")
         self.assertIsInstance(kwargs["start"], pd.Timestamp)
         self.assertIsInstance(kwargs["end"], pd.Timestamp)
         self.assertEqual(str(kwargs["start"].tz), "UTC")
