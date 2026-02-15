@@ -4,6 +4,7 @@ from datetime import datetime
 from entsoe.exceptions import NoMatchingDataError
 from src.api_client import EntsoeClient
 from src.datasets.base import BaseDataset
+from src.utils import to_utc, ensure_utc_index
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +18,20 @@ class ActualGenerationPerUnitDataset(BaseDataset):
         Fetch actual generation per generation unit for Poland (PL).
         Handles cases where no data is available by logging a warning and returning an empty DataFrame.
         """
+        start_ts = pd.Timestamp(to_utc(start))
+        if start_ts.tz is None:
+            start_ts = start_ts.tz_localize("UTC")
+
+        end_ts = pd.Timestamp(to_utc(end))
+        if end_ts.tz is None:
+            end_ts = end_ts.tz_localize("UTC")
+
         try:
             df = client.fetch_data(
                 "query_generation_per_plant",
                 country_code="PL",
-                start=pd.Timestamp(start),
-                end=pd.Timestamp(end),
+                start=start_ts,
+                end=end_ts,
                 psr_type=None,
                 include_eic=False
             )
@@ -64,8 +73,4 @@ class ActualGenerationPerUnitDataset(BaseDataset):
             df.columns = [str(c).lower().replace(" ", "_") for c in df.columns]
 
         # Ensure UTC and make naive for Excel support
-        if df.index.tz is not None:
-            df.index = df.index.tz_convert("UTC").tz_localize(None)
-            
-        df.index.name = "timestamp_utc"
-        return df
+        return ensure_utc_index(df, make_naive_for_storage=True)
