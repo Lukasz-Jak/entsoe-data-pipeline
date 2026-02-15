@@ -109,6 +109,36 @@ class TestActualGenerationDataset(unittest.TestCase):
         self.assertIsNone(normalized_df.index.tz)
         self.assertEqual(normalized_df.index.name, "timestamp_utc")
 
+    def test_fetch_passes_utc_aware_pd_timestamps_to_client(self):
+        from datetime import timezone
+        mock_client = MagicMock()
+        dr = pd.date_range(start="2026-01-01", periods=1, freq="h", tz="UTC")
+        mock_client.fetch_data.return_value = pd.DataFrame({"x": [1.0]}, index=dr)
+        
+        start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        end = datetime(2026, 1, 2, tzinfo=timezone.utc)
+        
+        self.dataset.fetch(mock_client, start, end)
+        
+        # Assert fetch_data was called exactly once
+        self.assertEqual(mock_client.fetch_data.call_count, 1)
+        
+        args, kwargs = mock_client.fetch_data.call_args
+        
+        # Verify first positional argument (fetch_func_name)
+        self.assertEqual(args[0], "query_generation")
+        
+        # Verify kwargs
+        self.assertEqual(kwargs["country_code"], "PL")
+        self.assertIn("psr_type", kwargs)
+        self.assertIsNone(kwargs["psr_type"])
+        self.assertIsInstance(kwargs["start"], pd.Timestamp)
+        self.assertIsInstance(kwargs["end"], pd.Timestamp)
+        self.assertEqual(str(kwargs["start"].tz), "UTC")
+        self.assertEqual(str(kwargs["end"].tz), "UTC")
+        self.assertEqual(kwargs["start"], pd.Timestamp(start))
+        self.assertEqual(kwargs["end"], pd.Timestamp(end))
+
 class TestGenerationForecastWindSolarDataset(unittest.TestCase):
     def setUp(self):
         self.dataset = GenerationForecastWindSolarDataset()
