@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import datetime
 from src.api_client import EntsoeClient
 from src.datasets.base import BaseDataset
+from src.utils import to_utc, ensure_utc_index
 
 class DayAheadPricesDataset(BaseDataset):
     @property
@@ -10,11 +11,19 @@ class DayAheadPricesDataset(BaseDataset):
 
     def fetch(self, client: EntsoeClient, start: datetime, end: datetime) -> pd.DataFrame:
         # Example for Poland (PL)
+        start_ts = pd.Timestamp(to_utc(start))
+        if start_ts.tz is None:
+            start_ts = start_ts.tz_localize("UTC")
+
+        end_ts = pd.Timestamp(to_utc(end))
+        if end_ts.tz is None:
+            end_ts = end_ts.tz_localize("UTC")
+
         return client.fetch_data(
             "query_day_ahead_prices",
             country_code="PL",
-            start=pd.Timestamp(start),
-            end=pd.Timestamp(end)
+            start=start_ts,
+            end=end_ts
         )
 
     def normalize(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -24,8 +33,4 @@ class DayAheadPricesDataset(BaseDataset):
             df = df.to_frame(name="price")
         
         # Ensure UTC and make naive for Excel support
-        if df.index.tz is not None:
-            df.index = df.index.tz_convert("UTC").tz_localize(None)
-            
-        df.index.name = "timestamp_utc"
-        return df
+        return ensure_utc_index(df, make_naive_for_storage=True)
