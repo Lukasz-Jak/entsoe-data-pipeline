@@ -127,15 +127,17 @@ This function is responsible for:
 
 Dataset-specific normalization logic must NOT duplicate this behavior.
 
+
 ### Refactoring Policy
 
-- CrossborderPhysicalFlowsDataset is the first dataset migrated to the shared utility.
-- Other datasets will be refactored incrementally ONLY when explicitly instructed.
-- Agents must NOT proactively refactor time handling across datasets.
+- Canonical UTC time handling is now implemented across all existing datasets.
+- Any new dataset MUST:
+  - pass UTC-aware `pd.Timestamp` to the ENTSO-E client
+  - normalize indexes exclusively via `ensure_utc_index(...)`
+- Agents must NOT introduce duplicate time normalization logic.
 
 No silent assumptions about tz-naive meaning UTC are allowed outside the shared utility.
 Do NOT add or modify tests during implementation work; tests are introduced only in a separate session when explicitly requested.
-
 
 
 ## FILE OUTPUT RULES
@@ -245,13 +247,17 @@ This rule applies to:
 
 Do not introduce user-facing messages in any other language.
 
+
 ## Testing expectations
 
-The project currently uses the standard `unittest` framework.
+The project uses Python's built-in `unittest` framework (NOT pytest).
 
-When introducing any non-trivial change (new feature, refactor, or behavioral change), the agent should:
-- consider whether the change affects decision logic or data flow,
-- add or update a corresponding unit test where reasonable (especially for dataset-level logic),
+Testing workflow is split into separate sessions:
+- During implementation sessions: do NOT add or modify tests unless explicitly requested by the user.
+- During testing sessions (explicitly requested): add/update tests as needed.
 
-Tests are intended to protect core behavior during further development, not to provide full coverage.
+If tests are run and fail after implementing requested behavior:
+- STOP and report what failed.
+- Do NOT change architectural decisions or production logic to satisfy outdated tests.
+- Do NOT modify tests unless explicitly instructed by the user.
 

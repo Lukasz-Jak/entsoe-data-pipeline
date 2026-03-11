@@ -164,6 +164,15 @@ python main.py --start 2024-01-01 --end 2024-01-02
 Using the same value for --start and --end will result in an empty dataset.
 
 
+### Time handling (UTC)
+
+The project operates canonically in UTC:
+
+- CLI dates are interpreted as UTC dates.
+- All ENTSO-E API calls use explicit UTC-aware timestamps.
+- Output indexes are named `timestamp_utc` and are stored as UTC-naive timestamps (semantically UTC) for Excel compatibility.
+
+
 ## Handling missing or delayed ENTSO-E data
 
 Some ENTSO-E datasets (e.g. generation per unit) are published with delays
@@ -201,4 +210,4 @@ Tests are intentionally lightweight but cover:
 - bidirectional exchange logic
 - exception propagation
 - deterministic output behavior
-- UTC normalization (strict, defensive normalization is fully implemented for `crossborder_physical_flows`; other datasets currently rely on legacy behavior)
+- UTC normalization (canonical UTC contract is enforced across all datasets via shared utilities; outputs use `timestamp_utc` and are stored as UTC-naive for Excel compatibility)
