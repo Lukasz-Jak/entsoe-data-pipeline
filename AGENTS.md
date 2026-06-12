@@ -26,15 +26,28 @@ and extensible without introducing additional infrastructure.
   - local caches and build artifacts.
 - Do not commit generated data files, secrets, or local environment artifacts.
 
-## PROJECT SCOPE (MVP — HARD CONSTRAINTS)
+## PROJECT SCOPE
+
+This project started as an MVP focused on downloading time-series data from the ENTSO-E API and persisting it to local CSV/XLSX files.
+
+The project is now being extended on a dedicated feature branch with an optional PostgreSQL storage layer.
+
+Current supported scope:
 - Language: Python.
-- Purpose: download data from ENTSO-E API.
-- Outputs: CSV and XLSX only.
-- No databases.
-- No schedulers/orchestrators (Airflow, cron integration, background jobs).
-- No cloud services.
-- No analytics/visualization layers.
-- MVP must not block future expansion.
+- Purpose: download, normalize, and persist selected ENTSO-E datasets.
+- Existing outputs: CSV and XLSX.
+- New optional storage layer: PostgreSQL.
+- Database work must be reproducible from version-controlled SQL/Python scripts.
+- PostgreSQL support must not break the existing file-based pipeline.
+- The existing CSV/XLSX workflow remains valid and must continue to work.
+
+The PostgreSQL extension should focus on:
+- database schema design,
+- table creation scripts,
+- indexes,
+- views or simple analytical marts,
+- loading already generated CSV/XLSX outputs into PostgreSQL,
+- future compatibility with direct pipeline-to-database writes.
 
 ## GLOBAL RULES FOR AI AGENTS
 - Follow AGENTS.md strictly.
@@ -147,6 +160,47 @@ Do NOT add or modify tests during implementation work; tests are introduced only
 - Column naming conventions must be consistent across datasets.
 - Pipeline must interact with outputs via a generic writer interface.
 
+## POSTGRESQL STORAGE RULES
+
+PostgreSQL support is an optional extension of the project.
+
+Rules:
+- Database schema must be defined in version-controlled SQL files.
+- SQL files should be placed in a dedicated `sql/` directory.
+- Historical imports from existing outputs should be implemented in dedicated scripts, for example under `scripts/`.
+- Database connection settings must be read from environment variables.
+- Real credentials must never be committed.
+- A `.env.example` file may document required variables.
+- Python database code must use parameterized SQL queries.
+- Avoid building dynamic SQL with string interpolation unless identifiers are explicitly validated.
+- The database layer must not break existing CSV/XLSX output behavior.
+- PostgreSQL tables should be designed for time-series ENTSO-E data and should preserve UTC semantics.
+- `timestamp_utc` remains the canonical time column.
+
+## DATABASE PROJECT STRUCTURE
+
+Recommended structure for the PostgreSQL extension:
+
+```text
+sql/
+  01_create_schemas.sql
+  02_create_tables.sql
+  03_create_indexes.sql
+  04_create_views.sql
+
+scripts/
+  import_outputs_to_postgres.py
+
+src/
+  database/
+    connection.py
+```
+The sql/ directory contains reproducible database definition scripts.
+
+The scripts/ directory contains operational scripts for loading existing local outputs into PostgreSQL.
+
+The src/database/ package may contain reusable database connection and loading utilities.
+
 ## IDEMPOTENCY RULES
 - Default behavior: skip writing outputs that already exist.
 - Existence checks must occur before writing.
@@ -206,12 +260,16 @@ Do NOT add or modify tests during implementation work; tests are introduced only
 - Code must be understandable without external explanation.
 
 ## EXPLICIT NON-GOALS
+
 This project explicitly does NOT aim to:
-- optimize performance beyond basic correctness,
-- minimize API calls beyond required functionality,
-- deduplicate or reconcile historical datasets,
-- support real-time or streaming data processing,
-- provide analytics, reporting, or visualization features.
+- introduce cloud infrastructure,
+- introduce schedulers or background jobs,
+- introduce real-time or streaming data processing,
+- introduce analytics dashboards or visualization layers,
+- optimize performance beyond basic correctness and reasonable indexing,
+- support every ENTSO-E dataset in PostgreSQL immediately,
+- build a full enterprise-grade data warehouse,
+- introduce migration frameworks such as Alembic unless explicitly requested.
 
 ## FUTURE-PROOFING RULES
 - Do not assume CSV/XLSX are the final storage layer.
@@ -223,13 +281,24 @@ This project explicitly does NOT aim to:
 can be added without refactoring core architecture.
 
 ## FORBIDDEN ACTIONS (ABSOLUTE)
+
 AI agents must NOT:
-- introduce databases,
+- introduce cloud services,
 - introduce schedulers or background jobs,
 - introduce concurrency or async execution,
-- introduce new storage formats,
 - bypass idempotency safeguards,
-- refactor architecture without explicit instruction.
+- commit generated data files,
+- commit secrets or local environment files,
+- hardcode database credentials,
+- refactor the core architecture without explicit instruction,
+- replace the existing file-based pipeline with a database-only workflow.
+
+AI agents MAY introduce PostgreSQL-related files only within the approved scope:
+- SQL schema scripts,
+- table/index/view definitions,
+- Python scripts for importing existing CSV/XLSX outputs into PostgreSQL,
+- database connection utilities using environment variables,
+- documentation explaining how to reproduce the database setup locally.
 
 ## AGENTS.MD MODIFICATION
 AI agents must not modify AGENTS.md unless explicitly instructed by the user.
