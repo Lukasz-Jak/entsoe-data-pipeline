@@ -172,6 +172,51 @@ The project operates canonically in UTC:
 - All ENTSO-E API calls use explicit UTC-aware timestamps.
 - Output indexes are named `timestamp_utc` and are stored as UTC-naive timestamps (semantically UTC) for Excel compatibility.
 
+## Optional PostgreSQL storage for total_load
+
+An optional PostgreSQL storage layer is available for importing existing `total_load` CSV/XLSX outputs.
+It does not replace the file-based pipeline.
+
+Added files:
+
+- `sql/01_create_schemas.sql`
+- `sql/02_create_tables.sql`
+- `sql/03_create_indexes.sql`
+- `sql/04_create_views.sql`
+- `scripts/import_total_load_to_postgres.py`
+
+Use a local PostgreSQL database named `entsoe`. The importer reads connection settings from:
+
+- `POSTGRES_HOST`
+- `POSTGRES_PORT`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+
+Run the SQL scripts manually in order using pgAdmin Query Tool or `psql`:
+
+```bash
+psql -d entsoe -f sql/01_create_schemas.sql
+psql -d entsoe -f sql/02_create_tables.sql
+psql -d entsoe -f sql/03_create_indexes.sql
+psql -d entsoe -f sql/04_create_views.sql
+```
+
+Preview an import without writing rows:
+
+```bash
+python scripts/import_total_load_to_postgres.py --dry-run
+```
+
+Run the import:
+
+```bash
+python scripts/import_total_load_to_postgres.py
+```
+
+The `entsoe_raw.total_load` table supports both hourly and 15-minute data in one table using `interval_minutes`.
+The `timestamp_utc` column follows the project's UTC-naive storage convention, while `loaded_at` uses `TIMESTAMPTZ` for load metadata.
+
 
 ## Handling missing or delayed ENTSO-E data
 
