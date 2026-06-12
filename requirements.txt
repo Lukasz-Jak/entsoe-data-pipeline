@@ -4,3 +4,4 @@ openpyxl
 pyyaml
 python-dotenv
 entsoe-py
+psycopg2-binary
