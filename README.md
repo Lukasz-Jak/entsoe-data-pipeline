@@ -177,12 +177,13 @@ The project operates canonically in UTC:
 An optional PostgreSQL storage layer is available for importing existing `total_load` CSV/XLSX outputs.
 It does not replace the file-based pipeline.
 
-Added files:
+PostgreSQL files:
 
 - `sql/01_create_schemas.sql`
 - `sql/02_create_tables.sql`
 - `sql/03_create_indexes.sql`
 - `sql/04_create_views.sql`
+- `sql/05_validate_total_load.sql`
 - `scripts/import_total_load_to_postgres.py`
 
 Use a local PostgreSQL database named `entsoe`. The importer reads connection settings from:
@@ -216,6 +217,19 @@ python scripts/import_total_load_to_postgres.py
 
 The `entsoe_raw.total_load` table supports both hourly and 15-minute data in one table using `interval_minutes`.
 The `timestamp_utc` column follows the project's UTC-naive storage convention, while `loaded_at` uses `TIMESTAMPTZ` for load metadata.
+
+### Validating imported total_load data
+
+After running the importer, validate the imported data manually in pgAdmin or `psql`:
+
+```bash
+psql -d entsoe -f sql/05_validate_total_load.sql
+```
+
+The validation script checks raw row counts, row counts by country and interval,
+timestamp ranges, unsupported intervals, duplicate logical keys, NULL value summaries,
+non-positive load values, daily completeness using the mart view, source file coverage,
+and a quick mart preview.
 
 
 ## Handling missing or delayed ENTSO-E data
