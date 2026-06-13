@@ -4,7 +4,7 @@ This project is entsoe-data-pipeline: a local, file-based data ingestion tool fo
 time-series datasets from the ENTSO-E API and persisting them as CSV/XLSX files.
 
 The project is intentionally minimal and deterministic. It focuses on correctness,
-clear separation of responsibilities, and reproducible outputs, without databases,
+clear separation of responsibilities, and reproducible outputs, without requiring databases, 
 orchestration tools, cloud services, or analytics layers.
 
 ## Scope (MVP)
@@ -17,7 +17,7 @@ orchestration tools, cloud services, or analytics layers.
 
 Out of scope:
 
-* databases
+* database-only storage as the primary workflow
 * schedulers (cron, Airflow, etc.)
 * cloud infrastructure
 * analytics, reporting, or visualization
@@ -172,9 +172,9 @@ The project operates canonically in UTC:
 - All ENTSO-E API calls use explicit UTC-aware timestamps.
 - Output indexes are named `timestamp_utc` and are stored as UTC-naive timestamps (semantically UTC) for Excel compatibility.
 
-## Optional PostgreSQL storage for total_load
+## Optional PostgreSQL storage
 
-An optional PostgreSQL storage layer is available for importing existing `total_load` CSV/XLSX outputs.
+An optional PostgreSQL storage layer is available for importing existing CSV/XLSX outputs.
 It does not replace the file-based pipeline.
 
 PostgreSQL files:
@@ -184,7 +184,9 @@ PostgreSQL files:
 - `sql/03_create_indexes.sql`
 - `sql/04_create_views.sql`
 - `sql/05_validate_total_load.sql`
+- `sql/06_validate_actual_generation.sql`
 - `scripts/import_total_load_to_postgres.py`
+- `scripts/import_actual_generation_to_postgres.py`
 
 Use a local PostgreSQL database named `entsoe`. The importer reads connection settings from:
 
@@ -202,6 +204,8 @@ psql -d entsoe -f sql/02_create_tables.sql
 psql -d entsoe -f sql/03_create_indexes.sql
 psql -d entsoe -f sql/04_create_views.sql
 ```
+
+### Importing total_load
 
 Preview an import without writing rows:
 
@@ -230,6 +234,39 @@ The validation script checks raw row counts, row counts by country and interval,
 timestamp ranges, unsupported intervals, duplicate logical keys, NULL value summaries,
 non-positive load values, daily completeness using the mart view, source file coverage,
 and a quick mart preview.
+
+### Importing actual_generation
+
+Existing `actual_generation` CSV/XLSX outputs can be imported into `entsoe_raw.actual_generation`.
+The importer converts the wide file output into a long/narrow PostgreSQL format for analytical querying.
+
+In this model:
+
+- `source_column` preserves the original CSV/XLSX column name.
+- `production_type` is normalized for SQL-friendly analysis.
+- `measurement_type` stores values such as `actual_aggregated` and `actual_consumption`.
+- Legacy files without measurement suffixes are intentionally rejected and should be regenerated.
+
+Preview an import without writing rows:
+
+```bash
+python scripts/import_actual_generation_to_postgres.py --dry-run
+```
+
+Run the import:
+
+```bash
+python scripts/import_actual_generation_to_postgres.py
+```
+
+After running the importer, validate the imported data manually in pgAdmin or `psql`:
+
+```bash
+psql -d entsoe -f sql/06_validate_actual_generation.sql
+```
+
+The `entsoe_mart.v_daily_actual_generation_by_type` view provides daily summaries by
+country, interval, production type, and measurement type.
 
 
 ## Handling missing or delayed ENTSO-E data
