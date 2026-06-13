@@ -185,6 +185,8 @@ PostgreSQL files:
 - `sql/04_create_views.sql`
 - `sql/05_validate_total_load.sql`
 - `sql/06_validate_actual_generation.sql`
+- `sql/07_create_materialized_views.sql`
+- `sql/08_create_functions.sql`
 - `scripts/import_total_load_to_postgres.py`
 - `scripts/import_actual_generation_to_postgres.py`
 
@@ -203,6 +205,15 @@ psql -d entsoe -f sql/01_create_schemas.sql
 psql -d entsoe -f sql/02_create_tables.sql
 psql -d entsoe -f sql/03_create_indexes.sql
 psql -d entsoe -f sql/04_create_views.sql
+psql -d entsoe -f sql/07_create_materialized_views.sql
+psql -d entsoe -f sql/08_create_functions.sql
+```
+
+Validation scripts are intended to be run manually after imports:
+
+```bash
+psql -d entsoe -f sql/05_validate_total_load.sql
+psql -d entsoe -f sql/06_validate_actual_generation.sql
 ```
 
 ### Importing total_load
@@ -267,6 +278,83 @@ psql -d entsoe -f sql/06_validate_actual_generation.sql
 
 The `entsoe_mart.v_daily_actual_generation_by_type` view provides daily summaries by
 country, interval, production type, and measurement type.
+
+### Materialized views
+
+A regular view stores only the query definition and reads the underlying tables each time.
+A materialized view stores the query result physically and can be faster for repeated analytical reads.
+Materialized views must be refreshed after underlying raw data changes.
+
+This project uses materialized views as a simple monthly analytical mart:
+
+- `entsoe_mart.mv_monthly_total_load_summary` provides monthly total load summaries, including average/min/max actual load, estimated actual load in MWh, forecast MAE, and forecast bias.
+- `entsoe_mart.mv_monthly_generation_mix_by_type` provides monthly generation mix by production type, including estimated generation in MWh, monthly share by production type, and ranking within month, interval, and measurement type.
+
+Example monthly total load query:
+
+```sql
+SELECT *
+FROM entsoe_mart.mv_monthly_total_load_summary
+ORDER BY month_start, country_code, interval_minutes
+LIMIT 20;
+```
+
+Example monthly generation mix query:
+
+```sql
+SELECT *
+FROM entsoe_mart.mv_monthly_generation_mix_by_type
+ORDER BY month_start, measurement_type, rank_in_month
+LIMIT 50;
+```
+
+Refresh materialized views after importing new raw data:
+
+```sql
+REFRESH MATERIALIZED VIEW entsoe_mart.mv_monthly_total_load_summary;
+REFRESH MATERIALIZED VIEW entsoe_mart.mv_monthly_generation_mix_by_type;
+```
+
+Concurrent refresh is also possible because unique indexes are defined, but the materialized view must already exist and have a suitable unique index:
+
+```sql
+REFRESH MATERIALIZED VIEW CONCURRENTLY entsoe_mart.mv_monthly_total_load_summary;
+REFRESH MATERIALIZED VIEW CONCURRENTLY entsoe_mart.mv_monthly_generation_mix_by_type;
+```
+
+### Analytical functions
+
+The project includes simple PostgreSQL analytical functions in `entsoe_mart`.
+They are examples of database-side analytical logic using PL/pgSQL and are based only on already imported `entsoe_raw.total_load` data.
+
+`entsoe_mart.fn_get_high_load_variability_days(...)` returns days with the highest intraday load variability.
+It is useful for analysing operational stress, balancing needs, and potentially more volatile system conditions.
+Main metrics include average/min/max actual load, load spread in MW, load spread as a percent of average daily load, and estimated actual load in MWh.
+
+```sql
+SELECT *
+FROM entsoe_mart.fn_get_high_load_variability_days(
+    'PL'::text,
+    DATE '2024-01-01',
+    DATE '2024-01-31',
+    60::smallint,
+    10::integer
+);
+```
+
+`entsoe_mart.fn_get_daily_load_forecast_error(...)` compares forecasted load with actual load on a daily level.
+It is useful for analysing forecast quality and systematic overforecasting or underforecasting.
+Main metrics include forecast bias, MAE, RMSE, max absolute error, MAPE, and bias direction.
+
+```sql
+SELECT *
+FROM entsoe_mart.fn_get_daily_load_forecast_error(
+    'PL'::text,
+    DATE '2024-01-01',
+    DATE '2024-01-31',
+    60::smallint
+);
+```
 
 
 ## Handling missing or delayed ENTSO-E data

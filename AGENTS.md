@@ -2,10 +2,7 @@
 
 ## PROJECT INTENT
 
-This project is entsoe-data-pipeline: a minimal, deterministic data ingestion pipeline for downloading
-time-series data from the ENTSO-E API and persisting it to local files (CSV/XLSX).
-It is intentionally limited in scope and designed to be correct, reproducible,
-and extensible without introducing additional infrastructure.
+This project is entsoe-data-pipeline: a minimal, deterministic data ingestion pipeline for downloading time-series data from the ENTSO-E API and persisting it to local files (CSV/XLSX), with an optional PostgreSQL storage and analytical layer. It is intentionally limited in scope and designed to be correct, reproducible, and extensible without introducing additional infrastructure.
 
 ## ABSOLUTE AUTHORITY
 - Treat this file as the highest-priority repository contract.
@@ -187,19 +184,24 @@ sql/
   02_create_tables.sql
   03_create_indexes.sql
   04_create_views.sql
+  05_validate_total_load.sql
+  06_validate_actual_generation.sql
+  07_create_materialized_views.sql
+  08_create_functions.sql
 
 scripts/
-  import_outputs_to_postgres.py
+  import_total_load_to_postgres.py
+  import_actual_generation_to_postgres.py
 
 src/
   database/
-    connection.py
-```
-The sql/ directory contains reproducible database definition scripts.
+    connection.py  # optional future reusable database utilities
+
+The sql/ directory contains reproducible database definition, validation, mart, and analytical function scripts.
 
 The scripts/ directory contains operational scripts for loading existing local outputs into PostgreSQL.
 
-The src/database/ package may contain reusable database connection and loading utilities.
+The src/database/ package may contain reusable database connection and loading utilities if the database layer is expanded in the future.
 
 ## IDEMPOTENCY RULES
 - Default behavior: skip writing outputs that already exist.
@@ -293,11 +295,11 @@ AI agents must NOT:
 - refactor the core architecture without explicit instruction,
 - replace the existing file-based pipeline with a database-only workflow.
 
-AI agents MAY introduce PostgreSQL-related files only within the approved scope:
-- SQL schema scripts,
-- table/index/view definitions,
-- Python scripts for importing existing CSV/XLSX outputs into PostgreSQL,
-- database connection utilities using environment variables,
+AI agents MAY introduce PostgreSQL-related files only within the approved scope: 
+- SQL schema scripts, 
+- table/index/view definitions, 
+- Python scripts for importing existing CSV/XLSX outputs into PostgreSQL, 
+- database connection utilities using environment variables, 
 - documentation explaining how to reproduce the database setup locally.
 
 ## AGENTS.MD MODIFICATION
