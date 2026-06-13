@@ -134,3 +134,33 @@ CREATE INDEX idx_mv_monthly_generation_mix_by_type_production_type
 -- Concurrent refresh examples require the unique indexes defined above:
 -- REFRESH MATERIALIZED VIEW CONCURRENTLY entsoe_mart.mv_monthly_total_load_summary;
 -- REFRESH MATERIALIZED VIEW CONCURRENTLY entsoe_mart.mv_monthly_generation_mix_by_type;
+
+
+SELECT *
+FROM entsoe_mart.mv_monthly_total_load_summary
+LIMIT 20;
+
+
+
+SELECT *
+FROM entsoe_mart.mv_monthly_generation_mix_by_type
+ORDER BY month_start, rank_in_month
+LIMIT 50;
+
+
+
+SELECT
+    country_code,
+    month_start,
+    interval_minutes,
+    measurement_type,
+    SUM(share_in_month_pct) AS total_share_pct
+FROM entsoe_mart.mv_monthly_generation_mix_by_type
+GROUP BY
+    country_code,
+    month_start,
+    interval_minutes,
+    measurement_type
+ORDER BY month_start;
+
+
